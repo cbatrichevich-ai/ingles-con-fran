@@ -1,4 +1,4 @@
-name: Compilar Ingles con Fran Android
+name: Publicar Ingles con Fran Android
 
 on:
   workflow_dispatch:
@@ -6,6 +6,10 @@ on:
     branches: [ main ]
     paths:
       - 'Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -24,7 +28,15 @@ jobs:
       - name: Compilar APK
         working-directory: project
         run: gradle :app:assembleDebug --no-daemon
+      - name: Preparar archivo de entrega
+        run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran.apk
       - uses: actions/upload-artifact@v4
         with:
           name: Ingles-con-Fran-Android
-          path: project/app/build/outputs/apk/debug/app-debug.apk
+          path: Ingles-con-Fran.apk
+      - name: Publicar descarga estable
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete prueba-fran --cleanup-tag -y 2>/dev/null || true
+          gh release create prueba-fran Ingles-con-Fran.apk --title "Inglés con Fran — prueba" --notes "Versión Android probada previamente en teléfono."
