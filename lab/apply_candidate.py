@@ -24,15 +24,13 @@ if 'id="rewardPop"' not in h:
 marker="function onAndroidPermissionReady(){micPermissionReady=true;micDiag('')}"
 extra="""
 function showReward(){const r=document.getElementById('rewardPop');if(!r)return;r.classList.remove('on');void r.offsetWidth;r.classList.add('on');setTimeout(()=>r.classList.remove('on'),1450)}
-let positiveVoiceIndex=0;
-function playPositiveVoice(){const seq=['192.wav','193.wav','194.wav','195.wav','196.wav'];const f=seq[positiveVoiceIndex++%seq.length];const a=new Audio('audio/'+f);a.volume=.95;a.play().catch(()=>{})}
 """
 if extra.strip() not in h:
     h=h.replace(marker,extra+marker,1)
 
-# Éxito: recompensa visible + una toma positiva existente de Mabel.
+# Éxito: recompensa visible + circuito positivo ya existente de Mabel (192-196).
 old="if(ok){listenToken++;currentExpected='';micCue(false);micDiag('');document.getElementById('status').textContent='✅ ¡Muy bien!'}"
-new="if(ok){listenToken++;currentExpected='';micCue(false);micDiag('');document.getElementById('status').textContent='✅ ¡Muy bien!';showReward();playPositiveVoice()}"
+new="if(ok){listenToken++;currentExpected='';micCue(false);micDiag('');document.getElementById('status').textContent='✅ ¡Muy bien!';showReward();celebrate()}"
 if old not in h: raise SystemExit('STOP: no se encontró rama de éxito del reconocimiento')
 h=h.replace(old,new,1)
 
@@ -51,4 +49,4 @@ h=h.replace(old3,new3,1)
 h=h.replace("function openModule(key){\n  if(key==='hora'){stopAudio();show('lesson');renderHoraV7();return;}","function openModule(key){\n  cancelListen();micDiag('');\n  if(key==='hora'){stopAudio();show('lesson');renderHoraV7();return;}",1)
 
 htmlp.write_text(h,encoding='utf-8')
-print('CANDIDATA APLICADA: Hora entra por playContent; español no abre micrófono; navegación cancela escucha; recompensa visual/sonora añadida; 187.wav preservado.')
+print('CANDIDATA APLICADA: Hora entra por playContent; español no abre micrófono; navegación cancela escucha; recompensa visual + celebrate existente; 187.wav preservado.')
