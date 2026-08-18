@@ -1,5 +1,5 @@
 name: Compilar laboratorio RED micrófono
-# trigger diagnóstico RED a09a5f8
+# auditoría de rutas reales de audio/micrófono
 
 on:
   workflow_dispatch:
@@ -19,7 +19,32 @@ jobs:
       - uses: actions/checkout@v4
       - name: Descomprimir base Android congelada
         run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
-      - name: Aplicar únicamente laboratorio RED
+      - name: Auditar llamadas de audio antes de modificar
+        run: |
+          H=project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html
+          echo '=== FUNCIONES QUE REPRODUCEN AUDIO ==='
+          grep -nE 'playContent\(|playFile\(' "$H" | head -n 400 || true
+          echo '=== REFERENCIAS 001-186 FUERA DE playContent ==='
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          p=Path('project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html')
+          h=p.read_text(encoding='utf-8')
+          refs=[]
+          for m in re.finditer(r"(['\"])(\d{3}\.wav)\1", h):
+              f=m.group(2); n=int(f[:3])
+              if 1<=n<=186:
+                  line=h.count('\n',0,m.start())+1
+                  ls=h.rfind('\n',0,m.start())+1; le=h.find('\n',m.end())
+                  if le<0: le=len(h)
+                  txt=h[ls:le].strip()
+                  refs.append((n,line,txt))
+          print('referencias contenido:',len(refs),'únicas:',len(set(n for n,_,_ in refs)))
+          for n,line,txt in refs:
+              if 'playContent' not in txt:
+                  print(f'FUERA_PLAYCONTENT {n:03d} linea {line}: {txt[:260]}')
+          PY
+      - name: Aplicar laboratorio generalizado
         run: python3 lab/apply_lab.py
       - uses: actions/setup-java@v4
         with:
@@ -42,7 +67,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete lab-red-mic --cleanup-tag -y 2>/dev/null || true
-          gh release create lab-red-mic Ingles-con-Fran-LAB-RED-MIC.apk --title "Laboratorio RED + micrófono" --notes "Prueba aislada: sólo RED activa el nuevo pase de turno y reconocimiento de voz. La base aprobada no se reemplaza."
+          gh release create lab-red-mic Ingles-con-Fran-LAB-RED-MIC.apk --title "Laboratorio RED + micrófono" --notes "Auditoría de rutas de audio y micrófono sobre base congelada."
       - name: Registrar resultado del laboratorio
         if: always()
         env:
@@ -56,14 +81,7 @@ jobs:
           CONTENT=$(base64 -w0 /tmp/lab_status.txt)
           CURRENT_SHA=$(gh api repos/${{ github.repository }}/contents/LAB_RED_BUILD_STATUS.txt --jq .sha 2>/dev/null || true)
           if [ -n "$CURRENT_SHA" ]; then
-            gh api --method PUT repos/${{ github.repository }}/contents/LAB_RED_BUILD_STATUS.txt \
-              -f message="Registrar resultado laboratorio RED" \
-              -f content="$CONTENT" \
-              -f sha="$CURRENT_SHA" \
-              -f branch="main"
+            gh api --method PUT repos/${{ github.repository }}/contents/LAB_RED_BUILD_STATUS.txt -f message="Registrar resultado laboratorio RED" -f content="$CONTENT" -f sha="$CURRENT_SHA" -f branch="main"
           else
-            gh api --method PUT repos/${{ github.repository }}/contents/LAB_RED_BUILD_STATUS.txt \
-              -f message="Registrar resultado laboratorio RED" \
-              -f content="$CONTENT" \
-              -f branch="main"
+            gh api --method PUT repos/${{ github.repository }}/contents/LAB_RED_BUILD_STATUS.txt -f message="Registrar resultado laboratorio RED" -f content="$CONTENT" -f branch="main"
           fi
