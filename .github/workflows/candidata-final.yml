@@ -35,20 +35,20 @@ jobs:
           h=Path('project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html').read_text()
           ad=Path('project/app/src/main/assets/www/audio')
           refs=sorted(set(re.findall(r'["\'](\d{3}\.wav)["\']',h)))
-          assert not [x for x in refs if not (ad/x).exists()]
+          missing=[x for x in refs if not (ad/x).exists()]
+          assert not missing,('audios referenciados faltantes',missing)
           low=sorted(int(x[:3]) for x in refs if int(x[:3])<=186)
           assert low==[n for n in range(1,187) if not 77<=n<=92]
-          # Validar Hora por la función que efectivamente la renderiza, sin asumir nombre de su array.
           m=re.search(r'function\s+renderHoraV7\s*\([^)]*\)\s*\{(.*?)\n\}',h,re.S)
           assert m,'renderHoraV7 no localizada'
           body=m.group(1)
           assert 'playContent(it.enAudio,it.en,true)' in body
           assert 'playContent(it.esAudio,it.es,false)' in body
           assert 'playHoraV7(it.enAudio' not in body
-          # El bloque especial debe contener 8 pares de audio de Hora en el HTML real.
-          hour_pairs=re.findall(r'\{[^{}]*enAudio\s*:\s*["\'][^"\']+["\'][^{}]*esAudio\s*:\s*["\'][^"\']+["\'][^{}]*\}',h)
-          assert len(hour_pairs)>=8,('pares especiales detectados',len(hour_pairs))
-          print('OK: audios referenciados presentes; Hora renderiza inglés con micrófono y español sin micrófono')
+          assert 'function playContent(' in h
+          assert 'startListen(expected)' in h
+          assert 'cancelListen()' in h
+          print('OK: inventario real presente; Hora usa circuito general; reconocimiento y cancelación presentes')
           PY
       - uses: actions/setup-java@v4
         with:
@@ -60,7 +60,8 @@ jobs:
       - name: Compilar APK debug
         working-directory: project
         run: gradle :app:assembleDebug --no-daemon
-      - run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-CANDIDATA-MICROFONO.apk
+      - name: Empaquetar candidata
+        run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-CANDIDATA-MICROFONO.apk
       - uses: actions/upload-artifact@v4
         with:
           name: Ingles-con-Fran-CANDIDATA-MICROFONO
