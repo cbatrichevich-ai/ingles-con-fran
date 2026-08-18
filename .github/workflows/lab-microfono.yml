@@ -1,0 +1,45 @@
+name: Laboratorio microfono RED
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'lab/apply_lab.py'
+      - '.github/workflows/lab-microfono.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-lab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recuperar base Android congelada
+        run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
+      - name: Aplicar laboratorio aislado RED
+        run: python3 lab/apply_lab.py
+      - name: Control previo de integridad
+        run: |
+          grep -q 'android.permission.RECORD_AUDIO' project/app/src/main/AndroidManifest.xml
+          grep -q 'AndroidSpeech' project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html
+          test -s project/app/src/main/assets/www/audio/prompt_ahora_vos.wav
+          test -s project/app/src/main/assets/www/audio/187.wav
+          test -s project/app/src/main/assets/www/audio/001.wav
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compilar APK laboratorio
+        working-directory: project
+        run: gradle :app:assembleDebug --no-daemon
+      - name: Preparar APK
+        run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-LAB-MICROFONO-RED.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ingles-con-Fran-LAB-MICROFONO-RED
+          path: Ingles-con-Fran-LAB-MICROFONO-RED.apk
