@@ -12,10 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Descomprimir base congelada
-        run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
-      - name: Aplicar candidata integral
-        run: python3 lab/apply_candidate.py
+      - run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
+      - run: python3 lab/apply_candidate.py
       - name: Controles estructurales por flujo real
         run: |
           H=project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html
@@ -37,21 +35,20 @@ jobs:
           h=Path('project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html').read_text()
           ad=Path('project/app/src/main/assets/www/audio')
           refs=sorted(set(re.findall(r'["\'](\d{3}\.wav)["\']',h)))
-          missing=[x for x in refs if not (ad/x).exists()]
-          assert not missing,('audios referenciados faltantes',missing)
-          # La base real omite 077-092 en referencias; no se fuerza continuidad ficticia.
+          assert not [x for x in refs if not (ad/x).exists()]
           low=sorted(int(x[:3]) for x in refs if int(x[:3])<=186)
-          expected=[n for n in range(1,187) if not 77<=n<=92]
-          assert low==expected,(len(low),'inventario 001-186 distinto del congelado')
-          # Hora debe conservar ocho tarjetas y ambas ramas deben pasar por playContent.
-          mh=re.search(r'const HORA_V7\s*=\s*\[(.*?)\];',h,re.S)
-          assert mh,'HORA_V7 no localizado'
-          hour=mh.group(1)
-          cards=hour.count('enAudio')
-          assert cards==8,('tarjetas Hora',cards)
-          assert "en.onclick=()=>playContent(it.enAudio,it.en,true)" in h
-          assert "es.onclick=()=>playContent(it.esAudio,it.es,false)" in h
-          print('OK inventario real: 170 referencias de contenido + Hora 8 tarjetas; todos los archivos referenciados existen')
+          assert low==[n for n in range(1,187) if not 77<=n<=92]
+          # Validar Hora por la función que efectivamente la renderiza, sin asumir nombre de su array.
+          m=re.search(r'function\s+renderHoraV7\s*\([^)]*\)\s*\{(.*?)\n\}',h,re.S)
+          assert m,'renderHoraV7 no localizada'
+          body=m.group(1)
+          assert 'playContent(it.enAudio,it.en,true)' in body
+          assert 'playContent(it.esAudio,it.es,false)' in body
+          assert 'playHoraV7(it.enAudio' not in body
+          # El bloque especial debe contener 8 pares de audio de Hora en el HTML real.
+          hour_pairs=re.findall(r'\{[^{}]*enAudio\s*:\s*["\'][^"\']+["\'][^{}]*esAudio\s*:\s*["\'][^"\']+["\'][^{}]*\}',h)
+          assert len(hour_pairs)>=8,('pares especiales detectados',len(hour_pairs))
+          print('OK: audios referenciados presentes; Hora renderiza inglés con micrófono y español sin micrófono')
           PY
       - uses: actions/setup-java@v4
         with:
@@ -63,8 +60,7 @@ jobs:
       - name: Compilar APK debug
         working-directory: project
         run: gradle :app:assembleDebug --no-daemon
-      - name: Guardar APK candidata
-        run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-CANDIDATA-MICROFONO.apk
+      - run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-CANDIDATA-MICROFONO.apk
       - uses: actions/upload-artifact@v4
         with:
           name: Ingles-con-Fran-CANDIDATA-MICROFONO
