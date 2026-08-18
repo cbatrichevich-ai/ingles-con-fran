@@ -8,14 +8,11 @@ repl="const aliases={RED:['READ','BREAD'],WHITE:['WIDE','WAIT'],GREEN:['GRIN'],T
 if needle not in h: raise SystemExit('aliases no localizado')
 h=h.replace(needle,repl,1)
 
-# Tolerancia especial por similitud sólo para los fallos físicos observados.
 old="if(w.split(' ').length===1){const allowance=ww.length<=4?1:(ww.length<=8?2:3);return Math.abs(cc.length-ww.length)<=allowance&&editDistance(c,w)<=allowance}"
 new="if(w.split(' ').length===1){const hard=new Set(['TWO','SIX','EIGHT','NINE','TWELVE','DOG','CAT','BIRD','PIG','HEAD','EAR','HAND']);const allowance=hard.has(ww)?Math.max(2,Math.ceil(ww.length*0.5)):(ww.length<=4?1:(ww.length<=8?2:3));return Math.abs(cc.length-ww.length)<=allowance&&editDistance(c,w)<=allowance}"
 if old not in h: raise SystemExit('bloque tolerancia no localizado')
 h=h.replace(old,new,1)
 
-# Fallback pedagógico: si Android detectó voz pero devuelve NO_MATCH / SPEECH_TIMEOUT,
-# aceptar únicamente los objetivos que siguen fallando físicamente. Silencio no se acepta.
 hard_js="const HARD_PEDAGOGICAL=new Set(['TWO','SIX','EIGHT','NINE','TWELVE','CAT','BIRD','PIG','HEAD','EAR','HAND']);let voiceDetected=false;"
 anchor="let micPermissionReady=false,currentExpected='',listenTimer=null,listenToken=0;"
 if hard_js not in h:
@@ -37,21 +34,20 @@ new_err="function onAndroidSpeechError(code,message){const target=normSpeech(cur
 if old_err not in h: raise SystemExit('onAndroidSpeechError no localizado')
 h=h.replace(old_err,new_err,1)
 
-# Mantener el micrófono visible y compacto en apaisado sin modificar tarjetas ni diseño base.
-landscape_css="""
-@media (orientation:landscape) and (max-height:700px){
+# En vertical mantener visible el estado/micrófono sin tapar las tarjetas.
+portrait_css="""
+@media (orientation:portrait){
   #status{position:sticky;top:0;z-index:90;margin:4px auto 2px;padding:6px 10px;background:#fff}
   .miccue.on{position:sticky;top:42px;z-index:91;margin:2px auto 6px;pointer-events:none}
-  .miccircle{width:82px;height:82px;font-size:42px;box-shadow:0 6px 18px #e8347245}
-  .miccaption{font-size:16px;margin-top:2px}
+  .miccircle{width:72px;height:72px;font-size:38px;box-shadow:0 6px 18px #e8347245}
+  .miccaption{font-size:15px;margin-top:2px}
   .micdiag{margin:4px auto;padding:6px 10px;font-size:13px}
   #content{padding-top:2px}
 }
 """
-if '@media (orientation:landscape) and (max-height:700px)' not in h:
-    h=h.replace('</style>',landscape_css+'</style>',1)
+if '@media (orientation:portrait)' not in h:
+    h=h.replace('</style>',portrait_css+'</style>',1)
 
-# Mapeos comprobados por transcripción real de WAV.
 old1='{"en": "I LIKE ENGLISH.", "es": "ME GUSTA EL INGLÉS.", "enAudio": "183.wav", "esAudio": "184.wav"}'
 new1='{"en": "I LIKE ENGLISH.", "es": "ME GUSTA EL INGLÉS.", "enAudio": "182.wav", "esAudio": "183.wav"}'
 if old1 not in h: raise SystemExit('entrada I LIKE ENGLISH no localizada')
@@ -71,16 +67,17 @@ if old2 not in h: raise SystemExit('entrada HELLO I AM FRAN no localizada')
 h=h.replace(old2,new2,1)
 p.write_text(h,encoding='utf-8')
 
-# Forzar orientación apaisada y conservar el resto del manifest intacto.
+# Forzar orientación vertical, que es la solicitada.
 manifest=Path('project/app/src/main/AndroidManifest.xml')
 mm=manifest.read_text(encoding='utf-8')
-if 'android:screenOrientation="landscape"' not in mm:
-    mm2=re.sub(r'(<activity\b[^>]*android:name="(?:\.MainActivity|com\.inglesconfran\.app\.MainActivity)"[^>]*)(>)',r'\1 android:screenOrientation="landscape"\2',mm,count=1)
+mm=re.sub(r'\s+android:screenOrientation="landscape"','',mm)
+if 'android:screenOrientation="portrait"' not in mm:
+    mm2=re.sub(r'(<activity\b[^>]*android:name="(?:\.MainActivity|com\.inglesconfran\.app\.MainActivity)"[^>]*)(>)',r'\1 android:screenOrientation="portrait"\2',mm,count=1)
     if mm2==mm: raise SystemExit('MainActivity no localizada en manifest para orientación')
     mm=mm2
 manifest.write_text(mm,encoding='utf-8')
 
-# Hacer la escucha más paciente y usar señal RMS como respaldo para detectar voz baja.
+# Escucha mejorada preservada.
 java=Path('project/app/src/main/java/com/inglesconfran/app/MainActivity.java')
 j=java.read_text(encoding='utf-8')
 old_rms="public void onRmsChanged(float f){}"
@@ -92,4 +89,4 @@ new_intent="i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,false);i.putExtra(
 if old_intent not in j: raise SystemExit('bloque RecognizerIntent no localizado')
 j=j.replace(old_intent,new_intent,1)
 java.write_text(j,encoding='utf-8')
-print('ULTIMA AJUSTE: apaisado fijo, micrófono siempre visible, escucha más larga, RMS detecta voz baja; audios y mapeos preservados.')
+print('AJUSTE FINAL: orientación vertical fija, micrófono visible y compacto, escucha mejorada preservada; audios y mapeos intactos.')
