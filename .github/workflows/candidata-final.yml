@@ -1,0 +1,53 @@
+name: Candidata integral Ingles con Fran
+on:
+  push:
+    branches: [ agent/auditoria-microfono-punta-a-punta ]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descomprimir base congelada
+        run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
+      - name: Aplicar candidata integral
+        run: python3 lab/apply_candidate.py
+      - name: Controles estructurales obligatorios
+        run: |
+          H=project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html
+          J=project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          M=project/app/src/main/AndroidManifest.xml
+          test -f project/app/src/main/assets/www/audio/187.wav
+          grep -q 'RECORD_AUDIO' "$M"
+          grep -q 'EXTRA_LANGUAGE,"en-US"' "$J"
+          grep -q 'cancelListening' "$J"
+          grep -q "en.onclick=()=>playContent(it.enAudio,it.en,true)" "$H"
+          grep -q "es.onclick=()=>playContent(it.esAudio,it.es,false)" "$H"
+          grep -q "WHITE:\['WIDE','WAIT'\]" "$H"
+          grep -q "DOG:\['DOCK','DAWG'\]" "$H"
+          grep -q 'showReward();playPositiveVoice()' "$H"
+          ! grep -q "en.onclick=()=>playHoraV7" "$H"
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          h=Path('project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html').read_text()
+          en=re.findall(r'enAudio\s*:\s*["\']([^"\']+)',h)
+          es=re.findall(r'esAudio\s*:\s*["\']([^"\']+)',h)
+          ad=Path('project/app/src/main/assets/www/audio')
+          missing=[x for x in en+es if not (ad/x).exists()]
+          assert len(en)==96,(len(en),'enAudio esperados 96')
+          assert len(es)==96,(len(es),'esAudio esperados 96')
+          assert not missing,('audios faltantes',missing)
+          print('OK: 96 ingles + 96 espanol; todos los archivos existen')
+          PY
+      - name: Compilar APK debug
+        working-directory: project
+        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - name: Guardar APK candidata
+        run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-CANDIDATA-MICROFONO.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ingles-con-Fran-CANDIDATA-MICROFONO
+          path: Ingles-con-Fran-CANDIDATA-MICROFONO.apk
