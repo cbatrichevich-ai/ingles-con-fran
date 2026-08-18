@@ -1,4 +1,5 @@
 name: Compilar laboratorio RED micrófono
+# trigger diagnóstico RED a09a5f8
 
 on:
   workflow_dispatch:
