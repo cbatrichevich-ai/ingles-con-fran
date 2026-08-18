@@ -1,11 +1,11 @@
-name: Publicar Ingles con Fran Android
+name: Compilar laboratorio RED micrófono
 
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
     paths:
-      - 'Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip'
+      - 'lab/**'
       - '.github/workflows/build-apk.yml'
 
 permissions:
@@ -16,8 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Descomprimir proyecto Android
+      - name: Descomprimir base Android congelada
         run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
+      - name: Aplicar únicamente laboratorio RED
+        run: python3 lab/apply_lab.py
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -25,18 +27,18 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Compilar APK
+      - name: Compilar APK laboratorio
         working-directory: project
         run: gradle :app:assembleDebug --no-daemon
-      - name: Preparar archivo de entrega
-        run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran.apk
+      - name: Preparar APK laboratorio
+        run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-LAB-RED-MIC.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Ingles-con-Fran-Android
-          path: Ingles-con-Fran.apk
-      - name: Publicar descarga estable
+          name: Ingles-con-Fran-LAB-RED-MIC
+          path: Ingles-con-Fran-LAB-RED-MIC.apk
+      - name: Publicar descarga laboratorio
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release delete prueba-fran --cleanup-tag -y 2>/dev/null || true
-          gh release create prueba-fran Ingles-con-Fran.apk --title "Inglés con Fran — prueba" --notes "Versión Android probada previamente en teléfono."
+          gh release delete lab-red-mic --cleanup-tag -y 2>/dev/null || true
+          gh release create lab-red-mic Ingles-con-Fran-LAB-RED-MIC.apk --title "Laboratorio RED + micrófono" --notes "Prueba aislada: sólo RED activa el nuevo pase de turno y reconocimiento de voz. La base aprobada no se reemplaza."
