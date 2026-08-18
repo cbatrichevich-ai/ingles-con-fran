@@ -29,14 +29,14 @@ jobs:
           grep -q "es.onclick=()=>playContent(it.esAudio,it.es,false)" "$H"
           grep -q "WHITE:\['WIDE','WAIT'\]" "$H"
           grep -q "DOG:\['DOCK','DAWG'\]" "$H"
-          grep -q 'showReward();playPositiveVoice()' "$H"
+          grep -q 'showReward();celebrate()' "$H"
           ! grep -q "en.onclick=()=>playHoraV7" "$H"
           python3 - <<'PY'
           from pathlib import Path
           import re
           h=Path('project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html').read_text()
-          en=re.findall(r'enAudio\s*:\s*["\']([^"\']+)',h)
-          es=re.findall(r'esAudio\s*:\s*["\']([^"\']+)',h)
+          en=re.findall(r'["\']enAudio["\']\s*:\s*["\']([^"\']+)',h)
+          es=re.findall(r'["\']esAudio["\']\s*:\s*["\']([^"\']+)',h)
           ad=Path('project/app/src/main/assets/www/audio')
           missing=[x for x in en+es if not (ad/x).exists()]
           assert len(en)==96,(len(en),'enAudio esperados 96')
@@ -44,9 +44,16 @@ jobs:
           assert not missing,('audios faltantes',missing)
           print('OK: 96 ingles + 96 espanol; todos los archivos existen')
           PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
       - name: Compilar APK debug
         working-directory: project
-        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+        run: gradle :app:assembleDebug --no-daemon
       - name: Guardar APK candidata
         run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-CANDIDATA-MICROFONO.apk
       - uses: actions/upload-artifact@v4
