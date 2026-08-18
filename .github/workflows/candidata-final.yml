@@ -35,8 +35,9 @@ jobs:
           from pathlib import Path
           import re
           h=Path('project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html').read_text()
-          en=re.findall(r'["\']enAudio["\']\s*:\s*["\']([^"\']+)',h)
-          es=re.findall(r'["\']esAudio["\']\s*:\s*["\']([^"\']+)',h)
+          key=lambda k: rf'(?:["\']{k}["\']|{k})\s*:\s*["\']([^"\']+)'
+          en=re.findall(key('enAudio'),h)
+          es=re.findall(key('esAudio'),h)
           ad=Path('project/app/src/main/assets/www/audio')
           missing=[x for x in en+es if not (ad/x).exists()]
           assert len(en)==96,(len(en),'enAudio esperados 96')
