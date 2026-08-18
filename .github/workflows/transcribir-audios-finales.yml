@@ -2,6 +2,8 @@ name: Transcribir audios finales
 on:
   push:
     branches: [ agent/auditoria-microfono-punta-a-punta ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 permissions:
   contents: read
