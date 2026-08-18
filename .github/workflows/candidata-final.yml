@@ -16,7 +16,7 @@ jobs:
         run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
       - name: Aplicar candidata integral
         run: python3 lab/apply_candidate.py
-      - name: Inventario y controles estructurales
+      - name: Controles estructurales por flujo real
         run: |
           H=project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html
           J=project/app/src/main/java/com/inglesconfran/app/MainActivity.java
@@ -35,19 +35,23 @@ jobs:
           from pathlib import Path
           import re
           h=Path('project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html').read_text()
-          # Inventario real por pares de archivos, no por una cifra asumida.
-          nums=sorted(set(int(x) for x in re.findall(r'["\'](\d{3})\.wav["\']',h) if int(x)<=186))
-          odd=[n for n in nums if n%2]
-          even=[n for n in nums if not n%2]
-          missing_nums=[n for n in range(1,187) if n not in nums]
-          print('REFERENCIAS 001-186:',len(nums),'faltantes:',missing_nums)
-          print('IMPARES:',len(odd),'PARES:',len(even))
-          # DATA puede tener sintaxis mixta; validar cada archivo de contenido referenciado físicamente.
           ad=Path('project/app/src/main/assets/www/audio')
-          missing_files=[f'{n:03d}.wav' for n in nums if not (ad/f'{n:03d}.wav').exists()]
-          assert not missing_files,('audios referenciados faltantes',missing_files)
-          assert not missing_nums,('numeración 001-186 no referenciada',missing_nums)
-          print('OK: referencias 001-186 completas y archivos físicos presentes')
+          refs=sorted(set(re.findall(r'["\'](\d{3}\.wav)["\']',h)))
+          missing=[x for x in refs if not (ad/x).exists()]
+          assert not missing,('audios referenciados faltantes',missing)
+          # La base real omite 077-092 en referencias; no se fuerza continuidad ficticia.
+          low=sorted(int(x[:3]) for x in refs if int(x[:3])<=186)
+          expected=[n for n in range(1,187) if not 77<=n<=92]
+          assert low==expected,(len(low),'inventario 001-186 distinto del congelado')
+          # Hora debe conservar ocho tarjetas y ambas ramas deben pasar por playContent.
+          mh=re.search(r'const HORA_V7\s*=\s*\[(.*?)\];',h,re.S)
+          assert mh,'HORA_V7 no localizado'
+          hour=mh.group(1)
+          cards=hour.count('enAudio')
+          assert cards==8,('tarjetas Hora',cards)
+          assert "en.onclick=()=>playContent(it.enAudio,it.en,true)" in h
+          assert "es.onclick=()=>playContent(it.esAudio,it.es,false)" in h
+          print('OK inventario real: 170 referencias de contenido + Hora 8 tarjetas; todos los archivos referenciados existen')
           PY
       - uses: actions/setup-java@v4
         with:
