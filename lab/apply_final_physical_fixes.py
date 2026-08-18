@@ -33,9 +33,23 @@ if old_stage not in h: raise SystemExit('onAndroidSpeechStage no localizado')
 h=h.replace(old_stage,new_stage,1)
 
 old_err="function onAndroidSpeechError(code,message){micCue(true,false);document.getElementById('status').textContent='👂 Probemos otra vez';micDiag(message);if(currentExpected)requestListen(currentExpected,900)}"
-new_err="function onAndroidSpeechError(code,message){const target=normSpeech(currentExpected);if(voiceDetected&&(code===6||code===7)&&HARD_PEDAGOGICAL.has(target)){listenToken++;currentExpected='';voiceDetected=false;micCue(false);micDiag('');document.getElementById('status').textContent='✅ ¡Muy bien!';showReward();celebrate();return}micCue(true,false);document.getElementById('status').textContent='👂 Probemos otra vez';micDiag(message);if(currentExpected)requestListen(currentExpected,900)}"
+new_err="function onAndroidSpeechError(code,message){const target=normSpeech(currentExpected);if(voiceDetected&&(code===6||code===7)&&HARD_PEDAGOGICAL.has(target)){listenToken++;currentExpected='';voiceDetected=false;micCue(false);micDiag('');document.getElementById('status').textContent='✅ ¡Muy bien!';showReward();celebrate();return}micCue(true,false);document.getElementById('status').textContent='👂 Probemos otra vez';micDiag(message);if(currentExpected)requestListen(currentExpected,650)}"
 if old_err not in h: raise SystemExit('onAndroidSpeechError no localizado')
 h=h.replace(old_err,new_err,1)
+
+# Mantener el micrófono visible y compacto en apaisado sin modificar tarjetas ni diseño base.
+landscape_css="""
+@media (orientation:landscape) and (max-height:700px){
+  #status{position:sticky;top:0;z-index:90;margin:4px auto 2px;padding:6px 10px;background:#fff}
+  .miccue.on{position:sticky;top:42px;z-index:91;margin:2px auto 6px;pointer-events:none}
+  .miccircle{width:82px;height:82px;font-size:42px;box-shadow:0 6px 18px #e8347245}
+  .miccaption{font-size:16px;margin-top:2px}
+  .micdiag{margin:4px auto;padding:6px 10px;font-size:13px}
+  #content{padding-top:2px}
+}
+"""
+if '@media (orientation:landscape) and (max-height:700px)' not in h:
+    h=h.replace('</style>',landscape_css+'</style>',1)
 
 # Mapeos comprobados por transcripción real de WAV.
 old1='{"en": "I LIKE ENGLISH.", "es": "ME GUSTA EL INGLÉS.", "enAudio": "183.wav", "esAudio": "184.wav"}'
@@ -56,4 +70,26 @@ new2='{"en": "HELLO, I AM FRAN.", "es": "HOLA, SOY FRAN.", "enAudio": "184.wav",
 if old2 not in h: raise SystemExit('entrada HELLO I AM FRAN no localizada')
 h=h.replace(old2,new2,1)
 p.write_text(h,encoding='utf-8')
-print('FINAL FÍSICA: fallback sólo con voz detectada para números/CAT/BIRD/PIG/HEAD/EAR/HAND; silencio no acepta; mapeos finales preservados.')
+
+# Forzar orientación apaisada y conservar el resto del manifest intacto.
+manifest=Path('project/app/src/main/AndroidManifest.xml')
+mm=manifest.read_text(encoding='utf-8')
+if 'android:screenOrientation="landscape"' not in mm:
+    mm2=re.sub(r'(<activity\b[^>]*android:name="(?:\.MainActivity|com\.inglesconfran\.app\.MainActivity)"[^>]*)(>)',r'\1 android:screenOrientation="landscape"\2',mm,count=1)
+    if mm2==mm: raise SystemExit('MainActivity no localizada en manifest para orientación')
+    mm=mm2
+manifest.write_text(mm,encoding='utf-8')
+
+# Hacer la escucha más paciente y usar señal RMS como respaldo para detectar voz baja.
+java=Path('project/app/src/main/java/com/inglesconfran/app/MainActivity.java')
+j=java.read_text(encoding='utf-8')
+old_rms="public void onRmsChanged(float f){}"
+new_rms="public void onRmsChanged(float f){if(myGen==listenGeneration&&f>0.5f)js(\"window.onAndroidSpeechStage&&window.onAndroidSpeechStage('Voz detectada')\");}"
+if old_rms not in j: raise SystemExit('onRmsChanged no localizado')
+j=j.replace(old_rms,new_rms,1)
+old_intent="i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,false);ArrayList<String> bias=new ArrayList<>();"
+new_intent="i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,false);i.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,1600L);i.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,2200L);i.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,1500L);ArrayList<String> bias=new ArrayList<>();"
+if old_intent not in j: raise SystemExit('bloque RecognizerIntent no localizado')
+j=j.replace(old_intent,new_intent,1)
+java.write_text(j,encoding='utf-8')
+print('ULTIMA AJUSTE: apaisado fijo, micrófono siempre visible, escucha más larga, RMS detecta voz baja; audios y mapeos preservados.')
