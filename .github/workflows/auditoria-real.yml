@@ -1,0 +1,37 @@
+name: Auditoria real base congelada
+on:
+  push:
+    branches: [ agent/auditoria-microfono-punta-a-punta ]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descomprimir base congelada
+        run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
+      - name: Auditar base real
+        run: python3 lab/audit_real.py project audit-base
+      - name: Aplicar parche actual a copia
+        run: |
+          cp -a project project-base
+          python3 lab/apply_lab.py
+          mv project project-patched
+          mv project-base project
+      - name: Auditar parche actual
+        run: python3 lab/audit_real.py project-patched audit-patched
+      - name: Diferencias
+        run: |
+          mkdir audit-diff
+          diff -u audit-base/summary.txt audit-patched/summary.txt > audit-diff/summary.diff || true
+          diff -u audit-base/functions.txt audit-patched/functions.txt > audit-diff/functions.diff || true
+          diff -u audit-base/card-map.tsv audit-patched/card-map.tsv > audit-diff/card-map.diff || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: auditoria-real
+          path: |
+            audit-base/
+            audit-patched/
+            audit-diff/
