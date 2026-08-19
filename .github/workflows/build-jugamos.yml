@@ -22,6 +22,8 @@ jobs:
         run: python3 juego/apply_jugamos.py
       - name: Aplicar ritmo pausado y consignas bilingues
         run: python3 juego/patch_bilingue.py
+      - name: Aplicar articulos y felicitaciones alternadas
+        run: python3 juego/patch_articulos_premio.py
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -43,7 +45,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete prueba-jugamos --cleanup-tag -y 2>/dev/null || true
-          gh release create prueba-jugamos Ingles-con-Fran-JUGAMOS.apk --title "Inglés con Fran - Jugamos" --notes "Juego 1 ajustado: consignas inglés + español, voz más lenta y mayor pausa entre desafíos."
+          gh release create prueba-jugamos Ingles-con-Fran-JUGAMOS.apk --title "Inglés con Fran - Jugamos" --notes "Juego 1 ajustado: consignas bilingües con artículos correctos y felicitaciones alternadas en inglés/español."
       - name: Registrar resultado comprobable
         if: always()
         env:
