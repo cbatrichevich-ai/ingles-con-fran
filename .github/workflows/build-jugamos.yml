@@ -42,3 +42,20 @@ jobs:
         run: |
           gh release delete prueba-jugamos --cleanup-tag -y 2>/dev/null || true
           gh release create prueba-jugamos Ingles-con-Fran-JUGAMOS.apk --title "Inglés con Fran - Jugamos" --notes "Primera miniapp independiente. Juego La voz manda con voz inglesa del sistema y 10 desafíos por partida."
+      - name: Registrar resultado comprobable
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_STATUS: ${{ job.status }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          printf 'status=%s\nrun_id=%s\nrun_attempt=%s\nhead_sha=%s\n' "$BUILD_STATUS" "$RUN_ID" "$RUN_ATTEMPT" "$HEAD_SHA" > /tmp/jugamos_status.txt
+          CONTENT=$(base64 -w0 /tmp/jugamos_status.txt)
+          CURRENT_SHA=$(gh api repos/${{ github.repository }}/contents/JUGAMOS_BUILD_STATUS.txt --jq .sha 2>/dev/null || true)
+          if [ -n "$CURRENT_SHA" ]; then
+            gh api --method PUT repos/${{ github.repository }}/contents/JUGAMOS_BUILD_STATUS.txt -f message="Registrar resultado Jugamos" -f content="$CONTENT" -f sha="$CURRENT_SHA" -f branch="main"
+          else
+            gh api --method PUT repos/${{ github.repository }}/contents/JUGAMOS_BUILD_STATUS.txt -f message="Registrar resultado Jugamos" -f content="$CONTENT" -f branch="main"
+          fi
