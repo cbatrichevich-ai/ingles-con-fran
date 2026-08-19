@@ -7,10 +7,10 @@ expected={'cat':'el gato','dog':'el perro','lion':'el león','fish':'el pez','re
 errors=[]
 for en,es in expected.items():
     if not re.search(r"\{w:'"+re.escape(en)+r"',s:'"+re.escape(es)+r"',e:",s): errors.append(f'Falta o está alterado {en} -> {es}')
-if len(re.findall(r"\{w:'",s)) != 24: errors.append('La lista no contiene exactamente 24 ítems')
-if "deck=shuffle([...ITEMS])" not in s: errors.append('La partida de prueba no recorre los 24 ítems')
-if "voice('Find the '+current.w)" not in s: errors.append('La consigna inglesa no usa la palabra actual')
-if "},1900)" not in s: errors.append('No está aplicada la pausa bilingüe de 1900 ms')
+if len(re.findall(r"\{w:'",s)) != 24: errors.append('El banco no contiene exactamente 24 ítems')
+if "deck=shuffle([...ITEMS]).slice(0,10)" not in s: errors.append('Juego 1 no está limitado a 10 rondas')
+if "AndroidVoice.speakPair('Find the '+current.w" not in s: errors.append('Juego 1 no usa audio bilingüe encadenado')
+if "cancelPromptPair();" not in s: errors.append('La respuesta no cancela la traducción pendiente')
 if "Buen trabajo" not in s or "Great job!" not in s: errors.append('No están ambas felicitaciones')
 if errors: raise SystemExit('VALIDACIÓN FALLÓ:\n- '+'\n- '.join(errors))
-print('VALIDACIÓN OK: 24/24, artículos, pausa bilingüe 1900 ms y premios alternados.')
+print('VALIDACIÓN OK: banco 24, Juego 1 de 10 rondas, audio por fin real y respuesta inmediata.')
