@@ -17,15 +17,14 @@ if top_old not in s:
     raise SystemExit('ERROR: no se encontró la barra superior del juego')
 s=s.replace(top_old,top_new,1)
 
-# Zona independiente de opciones de memoria; no reemplaza las imágenes recordadas.
+# Zona independiente de respuestas de memoria.
 grid_old='<div id="grid" class="grid"></div><div id="feedback" class="feedback"></div>'
 grid_new='<div id="grid" class="grid"></div><div id="memoryChoices" class="memory-choices hidden"></div><div id="feedback" class="feedback"></div>'
 if grid_old not in s:
     raise SystemExit('ERROR: no se encontró la grilla principal')
 s=s.replace(grid_old,grid_new,1)
 
-# CSS compacto para tres opciones debajo, manteniendo visibles las imágenes originales.
-s=s.replace('.feedback{height:54px;', '.memory-choices{width:min(92vw,760px);display:flex;justify-content:center;gap:16px;margin-top:10px}.memory-choice{border:0;border-radius:20px;background:white;box-shadow:0 6px 0 #c7dce8;font-size:clamp(42px,6vw,78px);min-width:120px;padding:8px 20px;cursor:pointer}.memory-choice:active{transform:scale(.96)}.feedback{height:54px;',1)
+s=s.replace('.feedback{height:54px;', '.memory-choices{width:min(92vw,820px);display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:14px;margin-top:10px}.memory-label{width:100%;text-align:center;font-size:clamp(18px,2.2vw,27px);font-weight:900}.memory-choice{border:0;border-radius:20px;background:white;box-shadow:0 6px 0 #c7dce8;font-size:clamp(42px,6vw,78px);min-width:120px;padding:8px 20px;cursor:pointer}.memory-choice:active{transform:scale(.96)}.feedback{height:54px;',1)
 
 marker='</body></html>'
 if marker not in s:
@@ -48,7 +47,6 @@ function nextMemory(){
  if(memRound>=8){$('memoryChoices').classList.add('hidden');show('finish');$('finalText').textContent=`Conseguiste ${memScore} estrellas`;voice('Fantastic!',true);return}
  memLocked=true;$('round').textContent=`Memoria ${memRound+1} de 8`;$('stars').textContent='⭐'.repeat(memScore);$('feedback').textContent='';
  $('memoryChoices').classList.add('hidden');$('memoryChoices').innerHTML='';
- // Se muestran CUATRO imágenes y se conservan exactamente esas mismas para la pregunta.
  memSet=shuffle([...ITEMS]).slice(0,4); missing=memSet[Math.floor(Math.random()*4)];
  $('prompt').innerHTML='👀 Look and remember<br><span style="font-size:.58em;font-weight:700">Mirá y recordá</span>';
  $('grid').innerHTML=''; memSet.forEach(o=>{const b=document.createElement('button');b.className='card';b.textContent=o.e;b.dataset.word=o.w;$('grid').appendChild(b)});
@@ -57,12 +55,12 @@ function nextMemory(){
 function hideMemory(){
  memTimer=null; memoryCancelPair();
  $('prompt').innerHTML='❓ What’s missing?<br><span style="font-size:.58em;font-weight:700">¿Cuál falta?</span>';
- // MISMA grilla, MISMAS posiciones: sólo desaparece una imagen y queda un signo de pregunta.
+ // Las cuatro posiciones siguen visibles: tres conservan su imagen y la que falta se convierte en ?.
  $('grid').innerHTML='';
  memSet.forEach(o=>{const b=document.createElement('button');b.className='card';b.dataset.word=o.w;if(o.w===missing.w){b.textContent='❓';b.disabled=true}else{b.textContent=o.e;b.disabled=true}$('grid').appendChild(b)});
- // Las opciones se muestran aparte: la correcta + dos distractores. Nunca reemplazan la grilla recordada.
+ // Debajo aparecen opciones claras para contestar: la imagen que faltó + dos distractores.
  const distract=shuffle(ITEMS.filter(x=>!memSet.some(m=>m.w===x.w))).slice(0,2);const opts=shuffle([missing,...distract]);
- const box=$('memoryChoices');box.innerHTML='';opts.forEach(o=>{const b=document.createElement('button');b.className='memory-choice';b.textContent=o.e;b.dataset.word=o.w;b.onclick=()=>chooseMemory(b,o);box.appendChild(b)});box.classList.remove('hidden');memLocked=false;
+ const box=$('memoryChoices');box.innerHTML='<div class="memory-label">Elegí la imagen que falta:</div>';opts.forEach(o=>{const b=document.createElement('button');b.className='memory-choice';b.textContent=o.e;b.dataset.word=o.w;b.onclick=()=>chooseMemory(b,o);box.appendChild(b)});box.classList.remove('hidden');memLocked=false;
  memorySpeakPair("What's missing?",'¿Cuál falta?');
 }
 function chooseMemory(btn,o){
@@ -73,13 +71,12 @@ function chooseMemory(btn,o){
 </script>'''
 s=s.replace(marker,script+marker,1)
 
-# Barrera material de salida: botón visible + conservación de la misma grilla + 4 imágenes + opción separada.
 required=[
  'onclick="startMemory()"','¿CUÁL FALTA?','function startMemory()','What’s missing?','Mirá y recordá',
- 'onclick="exitToMenu()"','⬅ SALIR','slice(0,4)','memSet.forEach','memoryChoices','memory-choice','b.textContent=\'❓\''
+ 'onclick="exitToMenu()"','⬅ SALIR','slice(0,4)','memSet.forEach','memoryChoices','memory-choice','Elegí la imagen que falta:','b.textContent=\'❓\''
 ]
 missing_req=[x for x in required if x not in s]
 if missing_req:
     raise SystemExit('ERROR Juego 2 incompleto: '+repr(missing_req))
 p.write_text(s,encoding='utf-8')
-print('Juego 2 corregido: salida visible, 4 imágenes fijas y una sola desaparece manteniendo las otras tres.')
+print('Juego 2 corregido conceptualmente: 4 originales, una falta y opciones separadas para responder.')
