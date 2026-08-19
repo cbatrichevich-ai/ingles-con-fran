@@ -16,17 +16,13 @@ s=s.replace('if(tts==null || !ttsReady || text==null) return;\n            tts.s
 java.write_text(s,encoding='utf-8')
 
 s=html.read_text(encoding='utf-8')
-# Add Spanish labels to vocabulary.
 translations={'cat':'gato','dog':'perro','lion':'león','fish':'pez','red':'rojo','blue':'azul','green':'verde','yellow':'amarillo','one':'uno','two':'dos','three':'tres','four':'cuatro','apple':'manzana','car':'auto','house':'casa','book':'libro','hand':'mano','eye':'ojo','nose':'nariz','foot':'pie','sun':'sol','moon':'luna','star':'estrella','rocket':'cohete'}
 for en,es in translations.items():
     s=s.replace("{w:'%s',e:"%en, "{w:'%s',s:'%s',e:"%(en,es))
-# Slower fallback voice.
 s=s.replace("u.rate=.82", "u.rate=.68")
-# Replace prompt with bilingual spoken sequence: English, pause, Spanish.
 old="function sayPrompt(){if(!current)return;$('prompt').textContent='🔊 Find the '+current.w+'!';voice('Find the '+current.w)}"
-new="function sayPrompt(){if(!current)return;$('prompt').innerHTML='🔊 Find the '+current.w+'!<br><span style=\"font-size:.58em;font-weight:700\">Buscá: '+current.s+'</span>';voice('Find the '+current.w);setTimeout(()=>{try{if(window.AndroidVoice&&AndroidVoice.speakSpanish){AndroidVoice.speakSpanish('Buscá '+current.s);return}}catch(e){} if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance('Buscá '+current.s);u.lang='es-AR';u.rate=.72;speechSynthesis.speak(u)}},1800)}"
+new="function sayPrompt(){if(!current)return;$('prompt').innerHTML='🔊 Find the '+current.w+'!<br><span style=\"font-size:.58em;font-weight:700\">Buscá: '+current.s+'</span>';voice('Find the '+current.w);setTimeout(()=>{try{if(window.AndroidVoice&&AndroidVoice.speakSpanish){AndroidVoice.speakSpanish('Buscá '+current.s);return}}catch(e){} if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance('Buscá '+current.s);u.lang='es-AR';u.rate=.72;speechSynthesis.speak(u)}},3200)}"
 s=s.replace(old,new)
-# Give praise time to finish and add breathing room before next round.
 s=s.replace('setTimeout(nextRound,900)', 'setTimeout(nextRound,2400)')
 html.write_text(s,encoding='utf-8')
-print('Jugamos ajustado: inglés más lento, traducción española y mayor pausa entre rondas.')
+print('Jugamos ajustado: inglés lento sin corte, traducción española y mayor pausa entre rondas.')
