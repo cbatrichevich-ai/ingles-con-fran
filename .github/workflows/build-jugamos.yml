@@ -28,11 +28,8 @@ jobs:
         run: python3 juego/validate_jugamos.py
       - name: Agregar Juego 2 memoria
         run: python3 juego/patch_memoria.py
-      - name: Validar que Juego 2 fue incorporado
-        run: |
-          grep -q "startMemory" project/app/src/main/assets/www/JUGAMOS.html
-          grep -q "What.s missing" project/app/src/main/assets/www/JUGAMOS.html
-          grep -q "Mirá y recordá" project/app/src/main/assets/www/JUGAMOS.html
+      - name: Validar Juego 2 memoria
+        run: python3 juego/validate_memoria.py
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -45,6 +42,29 @@ jobs:
         run: gradle :app:assembleDebug --no-daemon
       - name: Preparar APK
         run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-JUGAMOS.apk
+      - name: Verificar HTML material dentro del APK final
+        run: |
+          python3 - <<'PY'
+          import zipfile
+          apk='Ingles-con-Fran-JUGAMOS.apk'
+          with zipfile.ZipFile(apk) as z:
+              s=z.read('assets/www/JUGAMOS.html').decode('utf-8')
+          required={
+              'botón Juego 2':'onclick="startMemory()"',
+              'botón salir':'onclick="exitToMenu()"',
+              '4 posiciones':'grid-template-columns:repeat(4,1fr)',
+              'opciones fijas':'.memory-choices{position:fixed',
+              'opciones visibles':'bottom:8px',
+              '4 originales':'slice(0,4)',
+              'misma grilla':"b.textContent=(o.w===missing.w?'❓':o.e)",
+              'selector de respuesta':'Elegí la imagen que falta:',
+              'mostrar opciones':"box.classList.remove('hidden')"
+          }
+          missing=[name for name,token in required.items() if token not in s]
+          if missing:
+              raise SystemExit('APK FINAL NO ENTREGABLE: '+', '.join(missing))
+          print('APK FINAL VERIFICADO: Juego 2 visible, misma grilla, una falta, opciones dentro del viewport y salida.')
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: Ingles-con-Fran-JUGAMOS
@@ -54,7 +74,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete prueba-jugamos --cleanup-tag -y 2>/dev/null || true
-          gh release create prueba-jugamos Ingles-con-Fran-JUGAMOS.apk --title "Inglés con Fran - Jugamos" --notes "Juego 1 aprobado + Juego 2 memoria ¿Cuál falta?."
+          gh release create prueba-jugamos Ingles-con-Fran-JUGAMOS.apk --title "Inglés con Fran - Jugamos" --notes "Juego 1 + Juego 2 memoria con continuidad visual y opciones visibles."
       - name: Registrar resultado comprobable
         if: always()
         env:
