@@ -24,8 +24,15 @@ jobs:
         run: python3 juego/patch_bilingue.py
       - name: Aplicar articulos y felicitaciones alternadas
         run: python3 juego/patch_articulos_premio.py
-      - name: Validar contenido completo antes de compilar
+      - name: Validar Juego 1
         run: python3 juego/validate_jugamos.py
+      - name: Agregar Juego 2 memoria
+        run: python3 juego/patch_memoria.py
+      - name: Validar que Juego 2 fue incorporado
+        run: |
+          grep -q "startMemory" project/app/src/main/assets/www/JUGAMOS.html
+          grep -q "What.s missing" project/app/src/main/assets/www/JUGAMOS.html
+          grep -q "Mirá y recordá" project/app/src/main/assets/www/JUGAMOS.html
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -47,7 +54,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete prueba-jugamos --cleanup-tag -y 2>/dev/null || true
-          gh release create prueba-jugamos Ingles-con-Fran-JUGAMOS.apk --title "Inglés con Fran - Jugamos" --notes "Juego 1 ajustado: consignas bilingües con artículos correctos, palabras inglesas sin corte y felicitaciones alternadas."
+          gh release create prueba-jugamos Ingles-con-Fran-JUGAMOS.apk --title "Inglés con Fran - Jugamos" --notes "Juego 1 aprobado + Juego 2 memoria ¿Cuál falta?."
       - name: Registrar resultado comprobable
         if: always()
         env:
