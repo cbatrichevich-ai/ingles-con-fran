@@ -30,6 +30,11 @@ jobs:
         run: python3 juego/patch_memoria.py
       - name: Validar Juego 2 memoria
         run: python3 juego/validate_memoria.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar ejecución real y viewport antes de compilar
+        run: node juego/validate_memoria_browser.mjs project/app/src/main/assets/www/JUGAMOS.html
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -42,13 +47,20 @@ jobs:
         run: gradle :app:assembleDebug --no-daemon
       - name: Preparar APK
         run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-JUGAMOS.apk
-      - name: Verificar HTML material dentro del APK final
+      - name: Extraer HTML del APK final
         run: |
           python3 - <<'PY'
           import zipfile
           apk='Ingles-con-Fran-JUGAMOS.apk'
           with zipfile.ZipFile(apk) as z:
-              s=z.read('assets/www/JUGAMOS.html').decode('utf-8')
+              data=z.read('assets/www/JUGAMOS.html')
+          open('/tmp/JUGAMOS_APK.html','wb').write(data)
+          print('HTML final extraído de la APK:', len(data), 'bytes')
+          PY
+      - name: Verificar HTML material dentro del APK final
+        run: |
+          python3 - <<'PY'
+          s=open('/tmp/JUGAMOS_APK.html',encoding='utf-8').read()
           required={
               'botón Juego 2':'onclick="startMemory()"',
               'botón salir':'onclick="exitToMenu()"',
@@ -63,8 +75,10 @@ jobs:
           missing=[name for name,token in required.items() if token not in s]
           if missing:
               raise SystemExit('APK FINAL NO ENTREGABLE: '+', '.join(missing))
-          print('APK FINAL VERIFICADO: Juego 2 visible, misma grilla, una falta, opciones dentro del viewport y salida.')
+          print('APK FINAL: estructura material requerida presente.')
           PY
+      - name: Validar ejecución y viewport sobre el APK final
+        run: node juego/validate_memoria_browser.mjs /tmp/JUGAMOS_APK.html
       - uses: actions/upload-artifact@v4
         with:
           name: Ingles-con-Fran-JUGAMOS
@@ -74,7 +88,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete prueba-jugamos --cleanup-tag -y 2>/dev/null || true
-          gh release create prueba-jugamos Ingles-con-Fran-JUGAMOS.apk --title "Inglés con Fran - Jugamos" --notes "Juego 1 + Juego 2 memoria con continuidad visual y opciones visibles."
+          gh release create prueba-jugamos Ingles-con-Fran-JUGAMOS.apk --title "Inglés con Fran - Jugamos" --notes "Juego 1 + Juego 2 memoria. Entrega bloqueada si falla runtime, viewport o control material del APK final."
       - name: Registrar resultado comprobable
         if: always()
         env:
