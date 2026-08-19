@@ -1,2 +1,3 @@
 Disparo manual de compilación de Inglés con Fran - Jugamos.
 Fecha: 2026-08-19
+Intento: 2 con control automático de resultado.
