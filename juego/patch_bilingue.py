@@ -11,7 +11,6 @@ s=s.replace('@JavascriptInterface public void praise(String text){ speakNow(text
 needle='    private void speakNow(final String text, final float pitch, final float rate){'
 insert='''    private void speakSpanishNow(final String text){\n        runOnUiThread(()->{\n            if(tts==null || !ttsReady || text==null) return;\n            tts.setLanguage(new Locale("es","AR"));\n            tts.setPitch(1.02f); tts.setSpeechRate(0.72f);\n            tts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"jugamos_es");\n        });\n    }\n\n'''
 s=s.replace(needle,insert+needle)
-# English calls restore English locale before speaking.
 s=s.replace('if(tts==null || !ttsReady || text==null) return;\n            tts.setPitch(pitch);', 'if(tts==null || !ttsReady || text==null) return;\n            tts.setLanguage(Locale.US);\n            tts.setPitch(pitch);')
 java.write_text(s,encoding='utf-8')
 
@@ -20,9 +19,11 @@ translations={'cat':'gato','dog':'perro','lion':'león','fish':'pez','red':'rojo
 for en,es in translations.items():
     s=s.replace("{w:'%s',e:"%en, "{w:'%s',s:'%s',e:"%(en,es))
 s=s.replace("u.rate=.82", "u.rate=.68")
+# Prueba controlada: las 24 palabras aparecen exactamente una vez, en orden aleatorio.
+s=s.replace("deck=shuffle([...ITEMS]).slice(0,10)", "deck=shuffle([...ITEMS])")
 old="function sayPrompt(){if(!current)return;$('prompt').textContent='🔊 Find the '+current.w+'!';voice('Find the '+current.w)}"
-new="function sayPrompt(){if(!current)return;$('prompt').innerHTML='🔊 Find the '+current.w+'!<br><span style=\"font-size:.58em;font-weight:700\">Buscá: '+current.s+'</span>';voice('Find the '+current.w);setTimeout(()=>{try{if(window.AndroidVoice&&AndroidVoice.speakSpanish){AndroidVoice.speakSpanish('Buscá '+current.s);return}}catch(e){} if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance('Buscá '+current.s);u.lang='es-AR';u.rate=.72;speechSynthesis.speak(u)}},3200)}"
+new="function sayPrompt(){if(!current)return;$('prompt').innerHTML='🔊 Find the '+current.w+'!<br><span style=\"font-size:.58em;font-weight:700\">Buscá: '+current.s+'</span>';voice('Find the '+current.w);setTimeout(()=>{try{if(window.AndroidVoice&&AndroidVoice.speakSpanish){AndroidVoice.speakSpanish('Buscá '+current.s);return}}catch(e){} if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance('Buscá '+current.s);u.lang='es-AR';u.rate=.72;speechSynthesis.speak(u)}},1900)}"
 s=s.replace(old,new)
 s=s.replace('setTimeout(nextRound,900)', 'setTimeout(nextRound,2400)')
 html.write_text(s,encoding='utf-8')
-print('Jugamos ajustado: inglés lento sin corte, traducción española y mayor pausa entre rondas.')
+print('Jugamos prueba controlada: 24 palabras completas y pausa bilingue reducida.')
