@@ -20,6 +20,8 @@ jobs:
         run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
       - name: Crear aplicacion Jugamos independiente
         run: python3 juego/apply_jugamos.py
+      - name: Aplicar ritmo pausado y consignas bilingues
+        run: python3 juego/patch_bilingue.py
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -41,7 +43,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete prueba-jugamos --cleanup-tag -y 2>/dev/null || true
-          gh release create prueba-jugamos Ingles-con-Fran-JUGAMOS.apk --title "Inglés con Fran - Jugamos" --notes "Primera miniapp independiente. Juego La voz manda con voz inglesa del sistema y 10 desafíos por partida."
+          gh release create prueba-jugamos Ingles-con-Fran-JUGAMOS.apk --title "Inglés con Fran - Jugamos" --notes "Juego 1 ajustado: consignas inglés + español, voz más lenta y mayor pausa entre desafíos."
       - name: Registrar resultado comprobable
         if: always()
         env:
