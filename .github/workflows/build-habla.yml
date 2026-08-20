@@ -22,6 +22,8 @@ jobs:
         run: python3 habla/generate_habla.py
       - name: Agregar evaluación oral por palabra clave
         run: python3 habla/add_keyword_mic.py
+      - name: Agregar meses y estaciones
+        run: python3 habla/add_months_seasons.py
       - name: Validar estructura
         run: python3 habla/validate_habla.py
       - uses: actions/setup-node@v4
@@ -63,11 +65,18 @@ jobs:
           unzip -q "$GITHUB_WORKSPACE/Fran-HABLA.apk" assets/www/FRAN-HABLA.html
       - name: Validar runtime sobre el APK final
         run: node habla/validate_habla_browser.mjs /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
-      - name: Verificar límite de intentos en APK final
+      - name: Verificar contenido y límite de intentos en APK final
         run: |
           grep -q 'practiceAttempt<2' /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
           grep -q 'retryQueue' /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
           grep -q 'sessionVisits' /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
+          grep -q "months:{icon:'📅'" /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
+          grep -q "seasons:{icon:'🌎'" /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
+          grep -q "fEn:'January'" /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
+          grep -q "fEn:'December'" /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
+          grep -q "fEn:'Spring'" /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
+          grep -q "fEn:'Winter'" /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
+          grep -q 'function renderOptionPage()' /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
       - uses: actions/upload-artifact@v4
         with:
           name: Fran-HABLA
