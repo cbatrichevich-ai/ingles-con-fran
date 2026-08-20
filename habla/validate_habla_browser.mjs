@@ -22,10 +22,10 @@ try{
  await cdp('Page.enable');await cdp('Runtime.enable');const tree=await cdp('Page.getFrameTree'),frameId=tree.frameTree.frame.id;
  for(const [W,H,label] of [[1280,800,'tablet'],[960,540,'compacta'],[854,393,'phone'],[800,360,'phone']]){
   await cdp('Emulation.setDeviceMetricsOverride',{width:W,height:H,deviceScaleFactor:1,mobile:false});
-  await cdp('Page.setDocumentContent',{frameId,html});await sleep(100);
-  await cdp('Runtime.evaluate',{expression:`sayPair=(en,es)=>Promise.resolve(true);cancelAudio=()=>{};`});
+  await cdp('Page.setDocumentContent',{frameId,html});await sleep(120);
+  await cdp('Runtime.evaluate',{expression:`if(typeof renderMenu==='function')renderMenu(); sayPair=(en,es)=>Promise.resolve(true);cancelAudio=()=>{};`});
   const expr=`(async()=>{const f=[];const tick=()=>new Promise(r=>setTimeout(r,0));const inside=e=>{if(!e){f.push('elemento inexistente');return}const r=e.getBoundingClientRect(),s=getComputedStyle(e);if(s.display==='none'||s.visibility==='hidden')f.push('elemento oculto');if(r.left<-1||r.top<-1||r.right>innerWidth+1||r.bottom>innerHeight+1)f.push('elemento fuera viewport')};
-   show('home');const tiles=[...document.querySelectorAll('.tile')];if(tiles.length!==6)f.push('portada no tiene 6 familias');tiles.forEach(inside);inside(document.querySelector('.exit'));
+   renderMenu();show('home');const tiles=[...document.querySelectorAll('.tile')];if(tiles.length!==6)f.push('portada no tiene 6 familias');tiles.forEach(inside);inside(document.querySelector('.exit'));
    if(tiles.length===6){const hs=tiles.map(x=>x.getBoundingClientRect().height),ws=tiles.map(x=>x.getBoundingClientRect().width);if(Math.max(...hs)-Math.min(...hs)>2||Math.max(...ws)-Math.min(...ws)>2)f.push('familias desparejas')}
    for(const k of Object.keys(CATS)){openCategory(k);const c=CATS[k],opts=[...document.querySelectorAll('.option')];if(opts.length!==4)f.push(k+': no tiene 4 opciones');inside(document.querySelector('.top'));inside(document.querySelector('.starter'));inside(document.querySelector('.options'));opts.forEach(inside);choosePhrase(0,opts[0]);await tick();await tick();const x=c.opts[0],p=document.getElementById('phrase');if(p.classList.contains('hidden'))f.push(k+': frase no aparece');if(!p.textContent.includes(x.fEn)||!p.textContent.includes(x.fEs))f.push(k+': falta EN/ES');inside(p);const turn=document.getElementById('turn');if(turn.classList.contains('hidden'))f.push(k+': no invita a hablar');inside(turn);goHome()}
    return {f,w:innerWidth,h:innerHeight};})()`;
