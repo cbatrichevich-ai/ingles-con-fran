@@ -21,6 +21,11 @@ checks={
  'cotidianas':"daily:{icon:'☀️'",
  'turno oral':'🗣️ AHORA VOS',
  'bilingüe':'function sayPair(en,es)',
+ 'palabra clave':'function keywordOf(x)',
+ 'evaluación tolerante':'function gradeSpeech(all,key)',
+ 'dos intentos':'practiceAttempt<2',
+ 'reintento diferido':'retryQueue',
+ 'avance finito':'sessionVisits',
  'repetir':'function repeatPhrase()',
  'cierre':'function closeApp()',
  'responsive':'@media(max-height:500px)'
@@ -35,7 +40,10 @@ if 'UtteranceProgressListener' not in j: errors.append('callbacks de fin real')
 if '@JavascriptInterface public void exitApp()' not in j: errors.append('cierre nativo')
 if 'Fran Habla' not in m: errors.append('nombre visible')
 if '@drawable/fran_habla_icon' not in m: errors.append('icono visible')
-if 'RECORD_AUDIO' in m or 'SpeechRecognizer' in j: errors.append('no debe depender de micrófono')
+if 'RECORD_AUDIO' not in m: errors.append('permiso de micrófono')
+if 'SpeechRecognizer' not in j or 'EXTRA_MAX_RESULTS,7' not in j: errors.append('reconocimiento de voz')
+if 'EXTRA_BIASING_STRINGS' not in j: errors.append('sesgo por palabra esperada')
+if 'onAndroidSpeechResult' not in h or 'startListening' not in j: errors.append('puente micrófono')
 if errors:
     raise SystemExit('VALIDACIÓN HABLA FALLÓ:\n- '+'\n- '.join(errors))
-print('VALIDACIÓN HABLA OK: 6 familias, 24 frases, EN+ES, turno oral, sin micrófono y salida real.')
+print('VALIDACIÓN HABLA OK: 24 frases, audio EN+ES, palabra clave, máximo dos intentos por visita, reintento diferido finito y salida real.')
