@@ -28,8 +28,15 @@ jobs:
           python3 juego/validate_memoria.py
       - name: Aplicar variante adaptable independiente
         run: python3 juego-responsive/apply_responsive.py
+      - name: Agregar salida real de la app
+        run: python3 juego-responsive/add_exit_app.py
       - name: Validar estructura adaptable
         run: python3 juego-responsive/validate_responsive.py
+      - name: Validar cierre nativo y visible
+        run: |
+          grep -q 'exitApp()' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'CERRAR APP' project/app/src/main/assets/www/JUGAMOS.html
+          grep -q 'function closeApp()' project/app/src/main/assets/www/JUGAMOS.html
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -55,12 +62,13 @@ jobs:
           unzip -q "$GITHUB_WORKSPACE/Ingles-con-Fran-JUGAMOS-ADAPTABLE.apk" assets/www/JUGAMOS.html
       - name: Validar runtime y viewport sobre el APK final
         run: node juego-responsive/validate_responsive_browser.mjs /tmp/jugamos-responsive-apk/assets/www/JUGAMOS.html
-      - name: Verificar identidad y audio final
+      - name: Verificar identidad, audio y cierre final
         run: |
-          grep -q 'com.inglesconfran.jugamos.adaptable' project/app/build.gradle project/app/src/main/AndroidManifest.xml || true
           grep -q 'package com.inglesconfran.jugamos.adaptable;' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
           grep -q 'UtteranceProgressListener' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
           grep -q 'postDelayed' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'CERRAR APP' /tmp/jugamos-responsive-apk/assets/www/JUGAMOS.html
+          grep -q 'function closeApp()' /tmp/jugamos-responsive-apk/assets/www/JUGAMOS.html
       - uses: actions/upload-artifact@v4
         with:
           name: Ingles-con-Fran-JUGAMOS-ADAPTABLE
