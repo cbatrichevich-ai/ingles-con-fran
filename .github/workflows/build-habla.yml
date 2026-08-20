@@ -20,6 +20,8 @@ jobs:
         run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
       - name: Generar Fran Habla
         run: python3 habla/generate_habla.py
+      - name: Agregar evaluación oral por palabra clave
+        run: python3 habla/add_keyword_mic.py
       - name: Validar estructura
         run: python3 habla/validate_habla.py
       - uses: actions/setup-node@v4
@@ -39,16 +41,20 @@ jobs:
         run: gradle :app:assembleDebug --no-daemon
       - name: Preparar APK
         run: cp project/app/build/outputs/apk/debug/app-debug.apk Fran-HABLA.apk
-      - name: Verificar APK instalable, identidad y recursos
+      - name: Verificar APK instalable, identidad, audio y micrófono
         run: |
           unzip -t Fran-HABLA.apk >/dev/null
           unzip -l Fran-HABLA.apk | grep -q 'assets/www/FRAN-HABLA.html'
           unzip -l Fran-HABLA.apk | grep -q 'res/drawable/fran_habla_icon.xml'
           grep -q 'android:label="Fran Habla"' project/app/src/main/AndroidManifest.xml
           grep -q '@drawable/fran_habla_icon' project/app/src/main/AndroidManifest.xml
+          grep -q 'android.permission.RECORD_AUDIO' project/app/src/main/AndroidManifest.xml
           grep -q 'package com.inglesconfran.habla;' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
-          ! grep -q 'RECORD_AUDIO' project/app/src/main/AndroidManifest.xml
-          ! grep -q 'SpeechRecognizer' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'SpeechRecognizer' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'EXTRA_MAX_RESULTS,7' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'EXTRA_BIASING_STRINGS' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'ttsEn.setSpeechRate(.92f)' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'ttsEs.setSpeechRate(.96f)' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
       - name: Extraer HTML del APK final
         run: |
           rm -rf /tmp/fran-habla-apk
@@ -57,6 +63,11 @@ jobs:
           unzip -q "$GITHUB_WORKSPACE/Fran-HABLA.apk" assets/www/FRAN-HABLA.html
       - name: Validar runtime sobre el APK final
         run: node habla/validate_habla_browser.mjs /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
+      - name: Verificar límite de intentos en APK final
+        run: |
+          grep -q 'practiceAttempt<2' /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
+          grep -q 'retryQueue' /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
+          grep -q 'sessionVisits' /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
       - uses: actions/upload-artifact@v4
         with:
           name: Fran-HABLA
