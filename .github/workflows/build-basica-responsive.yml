@@ -22,12 +22,16 @@ jobs:
         run: python3 lab/apply_lab.py
       - name: Aplicar interfaz adaptable independiente
         run: python3 basica-responsive/apply_responsive.py
-      - name: Verificar identidad y permiso de micrófono
+      - name: Agregar salida real de la app
+        run: python3 basica-responsive/add_exit_app.py
+      - name: Verificar identidad, micrófono y salida
         run: |
           grep -q 'package com.inglesconfran.app.adaptable;' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
           grep -q 'android.permission.RECORD_AUDIO' project/app/src/main/AndroidManifest.xml
           grep -q 'SpeechRecognizer' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
           grep -q '@media (max-height:500px)' project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html
+          grep -q 'exitApp()' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'CERRAR APP' project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -53,6 +57,10 @@ jobs:
           unzip -q "$GITHUB_WORKSPACE/Ingles-con-Fran-BASICA-ADAPTABLE.apk" assets/www/ABRIR-INGLES-CON-FRAN.html
       - name: Validar runtime sobre el APK final
         run: node basica-responsive/validate_browser.mjs /tmp/fran-basic-apk/assets/www/ABRIR-INGLES-CON-FRAN.html
+      - name: Verificar salida en APK final
+        run: |
+          grep -q 'CERRAR APP' /tmp/fran-basic-apk/assets/www/ABRIR-INGLES-CON-FRAN.html
+          grep -q 'closeApp()' /tmp/fran-basic-apk/assets/www/ABRIR-INGLES-CON-FRAN.html
       - uses: actions/upload-artifact@v4
         with:
           name: Ingles-con-Fran-BASICA-ADAPTABLE
