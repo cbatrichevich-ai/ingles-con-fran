@@ -25,24 +25,30 @@ if mode not in brands:
     raise SystemExit('Uso: python3 branding/apply_brand.py basic|jugamos|more')
 b=brands[mode]
 
-strings=ROOT/'app/src/main/res/values/strings.xml'
-if not strings.exists():
-    raise SystemExit('STOP: strings.xml no encontrado')
-s=strings.read_text(encoding='utf-8')
-s,n=re.subn(r'(<string name="app_name">).*?(</string>)',r'\1'+b['label']+r'\2',s,flags=re.S)
-if n!=1:
-    raise SystemExit('STOP: app_name no pudo reemplazarse exactamente una vez')
-strings.write_text(s,encoding='utf-8')
-
 manifest=ROOT/'app/src/main/AndroidManifest.xml'
 if not manifest.exists():
     raise SystemExit('STOP: AndroidManifest.xml no encontrado')
 m=manifest.read_text(encoding='utf-8')
+
+# El proyecto base usa android:label literal en el manifest. Si alguna variante usa
+# @string/app_name, también la soportamos.
+if re.search(r'android:label="[^"]+"',m):
+    m=re.sub(r'android:label="[^"]+"',f'android:label="{b["label"]}"',m,count=1)
+else:
+    m=m.replace('<application',f'<application android:label="{b["label"]}"',1)
+
 if re.search(r'android:icon="[^"]+"',m):
     m=re.sub(r'android:icon="[^"]+"','android:icon="@drawable/fran_icon"',m,count=1)
 else:
     m=m.replace('<application','<application android:icon="@drawable/fran_icon"',1)
 manifest.write_text(m,encoding='utf-8')
+
+strings=ROOT/'app/src/main/res/values/strings.xml'
+if strings.exists():
+    s=strings.read_text(encoding='utf-8')
+    s,n=re.subn(r'(<string name="app_name">).*?(</string>)',lambda mo: mo.group(1)+b['label']+mo.group(2),s,flags=re.S)
+    if n:
+        strings.write_text(s,encoding='utf-8')
 
 draw=ROOT/'app/src/main/res/drawable'
 draw.mkdir(parents=True,exist_ok=True)
@@ -58,8 +64,9 @@ vector=f'''<?xml version="1.0" encoding="utf-8"?>
 '''
 (draw/'fran_icon.xml').write_text(vector,encoding='utf-8')
 
-if b['label'] not in strings.read_text(encoding='utf-8'):
-    raise SystemExit('STOP: nombre final no quedó en strings.xml')
-if '@drawable/fran_icon' not in manifest.read_text(encoding='utf-8'):
+final_manifest=manifest.read_text(encoding='utf-8')
+if f'android:label="{b["label"]}"' not in final_manifest:
+    raise SystemExit('STOP: nombre final no quedó en manifest')
+if '@drawable/fran_icon' not in final_manifest:
     raise SystemExit('STOP: icono final no quedó enlazado en manifest')
 print(f"BRANDING OK: {b['label']} / {b['color']} / @drawable/fran_icon")
