@@ -18,14 +18,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Descomprimir base Android congelada
         run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
-      - name: Generar Jugamos 2 desde fuente única
+      - name: Generar Jugamos 2 desde fuente base
         run: python3 jugamos2/generate_jugamos2.py
-      - name: Validar estructura
+      - name: Finalizar audio bilingue sin cortes
+        run: python3 jugamos2/finalize_bilingual_audio.py
+      - name: Validar estructura y audio bilingue
         run: python3 jugamos2/validate_jugamos2.py
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validar los tres juegos en runtime y viewport
+      - name: Validar los tres juegos bilingues en runtime y viewport
         run: node jugamos2/validate_jugamos2_browser.mjs project/app/src/main/assets/www/JUGAMOS2.html
       - uses: actions/setup-java@v4
         with:
@@ -45,13 +47,20 @@ jobs:
           mkdir -p /tmp/jugamos2-apk
           cd /tmp/jugamos2-apk
           unzip -q "$GITHUB_WORKSPACE/Ingles-con-Fran-MAS-JUEGOS.apk" assets/www/JUGAMOS2.html
-      - name: Validar runtime sobre el APK final
+      - name: Validar runtime bilingue sobre el APK final
         run: node jugamos2/validate_jugamos2_browser.mjs /tmp/jugamos2-apk/assets/www/JUGAMOS2.html
-      - name: Verificar identidad y TTS final
+      - name: Verificar identidad y TTS final por callback real
         run: |
           grep -q 'package com.inglesconfran.jugamos2;' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
           grep -q 'UtteranceProgressListener' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
-          grep -q 'speakEnglishList' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'pair_en_' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'pair_es_' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'notifyDone(callbackId,true)' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'onAndroidAudioDone' /tmp/jugamos2-apk/assets/www/JUGAMOS2.html
+          grep -q 'Buscá ' /tmp/jugamos2-apk/assets/www/JUGAMOS2.html
+          grep -q 'Atrapá ' /tmp/jugamos2-apk/assets/www/JUGAMOS2.html
+          ! grep -q 'setTimeout(nextBingoCall,1200)' /tmp/jugamos2-apk/assets/www/JUGAMOS2.html
+          ! grep -q 'setTimeout(nextCatchRound,700)' /tmp/jugamos2-apk/assets/www/JUGAMOS2.html
           ! grep -q 'SpeechRecognizer' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
       - uses: actions/upload-artifact@v4
         with:
