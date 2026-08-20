@@ -1,0 +1,1 @@
+Build de variante básica adaptable solicitado después de instalar workflow. Fecha: 2026-08-20.
