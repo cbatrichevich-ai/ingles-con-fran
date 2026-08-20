@@ -52,6 +52,7 @@ if 'package com.inglesconfran.habla;' not in j: errors.append('package Java')
 if 'ttsEn.setSpeechRate(.92f)' not in j or 'ttsEs.setSpeechRate(.96f)' not in j: errors.append('ritmo TTS')
 if 'UtteranceProgressListener' not in j: errors.append('callbacks de fin real')
 if '@JavascriptInterface public void single(' not in j: errors.append('puente de locución individual')
+if 'private void js(String s){runOnUiThread(()->{if(webView!=null)webView.evaluateJavascript(s,null);});}' not in j: errors.append('callback TTS no vuelve a WebView por UI thread')
 if '@JavascriptInterface public void exitApp()' not in j: errors.append('cierre nativo')
 if 'Fran Habla' not in m: errors.append('nombre visible')
 if '@drawable/fran_habla_icon' not in m: errors.append('icono visible')
@@ -60,4 +61,4 @@ if 'SpeechRecognizer' in j or 'RecognizerIntent' in j: errors.append('no debe fi
 if 'AndroidSpeech' in h or 'onAndroidSpeechResult' in h: errors.append('no debe quedar lógica de reconocimiento en HTML')
 if errors:
     raise SystemExit('VALIDACIÓN HABLA FALLÓ:\n- '+'\n- '.join(errors))
-print('VALIDACIÓN HABLA OK: 24 frases + 12 meses + 4 estaciones, teacher oral EN/ES, dos turnos cortos, avance automático y sin reconocimiento ficticio.')
+print('VALIDACIÓN HABLA OK: 24 frases + 12 meses + 4 estaciones, teacher oral EN/ES, callbacks TTS seguros, dos turnos cortos, avance automático y sin reconocimiento ficticio.')
