@@ -1,0 +1,30 @@
+import fs from 'fs';
+import {spawn,spawnSync} from 'child_process';
+import os from 'os';
+import path from 'path';
+
+const htmlPath=process.argv[2]||'project/app/src/main/assets/www/JUGAMOS2.html';
+if(!fs.existsSync(htmlPath))throw new Error(`HTML no encontrado: ${htmlPath}`);
+const html=fs.readFileSync(htmlPath,'utf8');
+let chrome=null;for(const c of ['google-chrome','google-chrome-stable','chromium','chromium-browser']){const r=spawnSync('which',[c],{encoding:'utf8'});if(r.status===0&&r.stdout.trim()){chrome=r.stdout.trim();break;}}
+if(!chrome)throw new Error('Chrome/Chromium no disponible');
+const port=9800+Math.floor(Math.random()*150),profile=fs.mkdtempSync(path.join(os.tmpdir(),'jugamos2-'));
+const proc=spawn(chrome,['--headless=new','--no-sandbox','--disable-gpu','--remote-allow-origins=*',`--remote-debugging-port=${port}`,`--user-data-dir=${profile}`,'about:blank'],{stdio:'ignore'});
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));async function waitJson(url){for(let i=0;i<80;i++){try{const r=await fetch(url);if(r.ok)return await r.json()}catch{}await sleep(100)}throw new Error('DevTools no respondió')}
+let ws,seq=0;const pending=new Map();function cdp(method,params={}){return new Promise((resolve,reject)=>{const id=++seq;pending.set(id,{resolve,reject});ws.send(JSON.stringify({id,method,params}))})}
+try{
+ const targets=await waitJson(`http://127.0.0.1:${port}/json`),target=targets.find(t=>t.type==='page')||targets[0];ws=new WebSocket(target.webSocketDebuggerUrl);await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true})});
+ ws.addEventListener('message',ev=>{const m=JSON.parse(ev.data);if(m.id&&pending.has(m.id)){const p=pending.get(m.id);pending.delete(m.id);m.error?p.reject(new Error(JSON.stringify(m.error))):p.resolve(m.result)}});await cdp('Page.enable');await cdp('Runtime.enable');const tree=await cdp('Page.getFrameTree'),frameId=tree.frameTree.frame.id;
+ for(const [W,H,label] of [[1280,800,'tablet'],[1280,720,'tablet'],[960,540,'compacta'],[854,393,'phone'],[800,360,'phone']]){
+  await cdp('Emulation.setDeviceMetricsOverride',{width:W,height:H,deviceScaleFactor:1,mobile:false});await cdp('Page.setDocumentContent',{frameId,html});await sleep(100);
+  await cdp('Runtime.evaluate',{expression:`pair=function(en,es){lastPair=[en,es]};english=function(){};praise=function(){};cancelAudio=function(){};`});
+  const expr=`(()=>{const f=[];const inside=e=>{if(!e){f.push('elemento inexistente');return}const r=e.getBoundingClientRect(),s=getComputedStyle(e);if(s.display==='none'||s.visibility==='hidden')f.push('elemento oculto');if(r.left<-1||r.top<-1||r.right>innerWidth+1||r.bottom>innerHeight+1)f.push('elemento fuera viewport')};
+   show('home');const tiles=[...document.querySelectorAll('.game-tile')];if(tiles.length!==3)f.push('portada no tiene 3 juegos');tiles.forEach(inside);if(tiles.length===3){const ws=tiles.map(x=>x.getBoundingClientRect().width);if(Math.max(...ws)-Math.min(...ws)>2)f.push('botones de portada desparejos')}
+   startBingo();clearTimers();if(bingoBoard.length!==9)f.push('bingo no tiene 9');nextBingoCall();const target=bingoTarget;const targetBtn=[...document.querySelectorAll('.bingo-cell')].find(b=>b.dataset.word===target.w);if(!targetBtn)f.push('target Bingo no está en tablero');inside(document.querySelector('.top'));inside(document.querySelector('.bingo'));[...document.querySelectorAll('.bingo-cell')].forEach(inside);const before=bingoMarked.size;tapBingo(targetBtn,target);if(bingoMarked.size!==before+1)f.push('Bingo no marca acierto');exitToHome();if($('home').classList.contains('hidden'))f.push('salir Bingo falla');
+   startSequence();clearTimers();if(!seqItems.length)f.push('secuencia vacía');showSequenceAnswer();const opts=[...document.querySelectorAll('.sequence-choice')];if(opts.length<seqItems.length)f.push('opciones secuencia insuficientes');seqItems.forEach(x=>{if(!opts.some(b=>b.dataset.word===x.w))f.push('falta item secuencia')});inside(document.querySelector('.sequence-options'));opts.forEach(inside);const expected=seqItems[0],sb=opts.find(b=>b.dataset.word===expected.w);tapSequence(sb,expected);if(seqPos!==1)f.push('secuencia no avanza');exitToHome();
+   startCatch();clearTimers();if(catchItems.length!==6)f.push('Atrápalo no tiene 6');const cb=[...document.querySelectorAll('.mover')].find(b=>b.dataset.word===catchTarget.w);if(!cb)f.push('target Atrápalo no aparece');inside(document.querySelector('.arena'));[...document.querySelectorAll('.mover')].forEach(inside);const cr=catchRound;tapCatch(cb,catchTarget);if(catchRound!==cr+1)f.push('Atrápalo no avanza');exitToHome();
+   return {f,w:innerWidth,h:innerHeight}})()`;
+  const rr=await cdp('Runtime.evaluate',{expression:expr,returnByValue:true});if(rr.exceptionDetails)throw new Error(rr.exceptionDetails.text||'Excepción JS');const v=rr.result.value;if(v.f.length)throw new Error(`${W}x${H} ${label}: ${v.f.join('; ')}`);console.log(`OK ${W}x${H} ${label}: portada + Bingo + Secuencia + Atrápalo`)
+ }
+ console.log('VALIDACIÓN JUGAMOS 2 RUNTIME OK');
+}finally{try{ws?.close()}catch{}try{proc.kill('SIGKILL')}catch{}try{fs.rmSync(profile,{recursive:true,force:true})}catch{}}
