@@ -1,0 +1,76 @@
+name: Compilar Ingles con Fran Mas Juegos
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'jugamos2/**'
+      - '.github/workflows/build-jugamos2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descomprimir base Android congelada
+        run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
+      - name: Generar Jugamos 2 desde fuente única
+        run: python3 jugamos2/generate_jugamos2.py
+      - name: Validar estructura
+        run: python3 jugamos2/validate_jugamos2.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar los tres juegos en runtime y viewport
+        run: node jugamos2/validate_jugamos2_browser.mjs project/app/src/main/assets/www/JUGAMOS2.html
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compilar APK independiente
+        working-directory: project
+        run: gradle :app:assembleDebug --no-daemon
+      - name: Preparar APK
+        run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-MAS-JUEGOS.apk
+      - name: Extraer HTML del APK final
+        run: |
+          rm -rf /tmp/jugamos2-apk
+          mkdir -p /tmp/jugamos2-apk
+          cd /tmp/jugamos2-apk
+          unzip -q "$GITHUB_WORKSPACE/Ingles-con-Fran-MAS-JUEGOS.apk" assets/www/JUGAMOS2.html
+      - name: Validar runtime sobre el APK final
+        run: node jugamos2/validate_jugamos2_browser.mjs /tmp/jugamos2-apk/assets/www/JUGAMOS2.html
+      - name: Verificar identidad y TTS final
+        run: |
+          grep -q 'package com.inglesconfran.jugamos2;' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'UtteranceProgressListener' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          grep -q 'speakEnglishList' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          ! grep -q 'SpeechRecognizer' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ingles-con-Fran-MAS-JUEGOS
+          path: Ingles-con-Fran-MAS-JUEGOS.apk
+      - name: Registrar resultado comprobable
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_STATUS: ${{ job.status }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          printf 'status=%s\nrun_id=%s\nrun_attempt=%s\nhead_sha=%s\n' "$BUILD_STATUS" "$RUN_ID" "$RUN_ATTEMPT" "$HEAD_SHA" > /tmp/jugamos2_status.txt
+          CONTENT=$(base64 -w0 /tmp/jugamos2_status.txt)
+          CURRENT_SHA=$(gh api repos/${{ github.repository }}/contents/JUGAMOS2_BUILD_STATUS.txt --jq .sha 2>/dev/null || true)
+          if [ -n "$CURRENT_SHA" ]; then
+            gh api --method PUT repos/${{ github.repository }}/contents/JUGAMOS2_BUILD_STATUS.txt -f message="Registrar resultado Mas Juegos" -f content="$CONTENT" -f sha="$CURRENT_SHA" -f branch="main"
+          else
+            gh api --method PUT repos/${{ github.repository }}/contents/JUGAMOS2_BUILD_STATUS.txt -f message="Registrar resultado Mas Juegos" -f content="$CONTENT" -f branch="main"
+          fi
