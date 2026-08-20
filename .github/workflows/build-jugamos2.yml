@@ -1,4 +1,4 @@
-name: Compilar Ingles con Fran Mas Juegos
+name: Compilar Ingles con Fran Mas Juegos Identificable
 
 on:
   workflow_dispatch:
@@ -6,6 +6,7 @@ on:
     branches: [ main ]
     paths:
       - 'jugamos2/**'
+      - 'branding/**'
       - '.github/workflows/build-jugamos2.yml'
 
 permissions:
@@ -24,8 +25,14 @@ jobs:
         run: python3 jugamos2/finalize_bilingual_audio.py
       - name: Acelerar ritmo y agregar cierre real
         run: python3 jugamos2/fast_exit.py
-      - name: Validar estructura, audio y cierre
-        run: python3 jugamos2/validate_jugamos2.py
+      - name: Aplicar nombre e icono identificables
+        run: python3 branding/apply_brand.py more
+      - name: Validar estructura, audio, cierre y branding
+        run: |
+          python3 jugamos2/validate_jugamos2.py
+          grep -q 'Fran Más Juegos' project/app/src/main/res/values/strings.xml
+          grep -q '@drawable/fran_icon' project/app/src/main/AndroidManifest.xml
+          test -s project/app/src/main/res/drawable/fran_icon.xml
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -41,8 +48,19 @@ jobs:
       - name: Compilar APK independiente
         working-directory: project
         run: gradle :app:assembleDebug --no-daemon
-      - name: Preparar APK
+      - name: Preparar APK con nombre inequívoco
         run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-MAS-JUEGOS.apk
+      - name: Verificar APK instalable, nombre e icono finales
+        run: |
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n1)
+          AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n1)
+          test -x "$APKSIGNER"
+          test -x "$AAPT"
+          "$APKSIGNER" verify --verbose Ingles-con-Fran-MAS-JUEGOS.apk
+          BADGING=$("$AAPT" dump badging Ingles-con-Fran-MAS-JUEGOS.apk)
+          echo "$BADGING"
+          echo "$BADGING" | grep -F "application-label:'Fran Más Juegos'"
+          echo "$BADGING" | grep -F 'fran_icon'
       - name: Extraer HTML del APK final
         run: |
           rm -rf /tmp/jugamos2-apk
@@ -87,7 +105,7 @@ jobs:
           CONTENT=$(base64 -w0 /tmp/jugamos2_status.txt)
           CURRENT_SHA=$(gh api repos/${{ github.repository }}/contents/JUGAMOS2_BUILD_STATUS.txt --jq .sha 2>/dev/null || true)
           if [ -n "$CURRENT_SHA" ]; then
-            gh api --method PUT repos/${{ github.repository }}/contents/JUGAMOS2_BUILD_STATUS.txt -f message="Registrar resultado Mas Juegos" -f content="$CONTENT" -f sha="$CURRENT_SHA" -f branch="main"
+            gh api --method PUT repos/${{ github.repository }}/contents/JUGAMOS2_BUILD_STATUS.txt -f message="Registrar resultado Mas Juegos Identificable" -f content="$CONTENT" -f sha="$CURRENT_SHA" -f branch="main"
           else
-            gh api --method PUT repos/${{ github.repository }}/contents/JUGAMOS2_BUILD_STATUS.txt -f message="Registrar resultado Mas Juegos" -f content="$CONTENT" -f branch="main"
+            gh api --method PUT repos/${{ github.repository }}/contents/JUGAMOS2_BUILD_STATUS.txt -f message="Registrar resultado Mas Juegos Identificable" -f content="$CONTENT" -f branch="main"
           fi
