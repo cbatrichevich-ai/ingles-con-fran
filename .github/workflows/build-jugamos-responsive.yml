@@ -1,4 +1,4 @@
-name: Compilar Ingles con Fran Jugamos Adaptable
+name: Compilar Ingles con Fran Jugamos Identificable
 
 on:
   workflow_dispatch:
@@ -6,6 +6,7 @@ on:
     branches: [ main ]
     paths:
       - 'juego-responsive/**'
+      - 'branding/**'
       - '.github/workflows/build-jugamos-responsive.yml'
 
 permissions:
@@ -30,13 +31,17 @@ jobs:
         run: python3 juego-responsive/apply_responsive.py
       - name: Agregar salida real de la app
         run: python3 juego-responsive/add_exit_app.py
-      - name: Validar estructura adaptable
-        run: python3 juego-responsive/validate_responsive.py
-      - name: Validar cierre nativo y visible
+      - name: Aplicar nombre e icono identificables
+        run: python3 branding/apply_brand.py jugamos
+      - name: Validar estructura adaptable y branding
         run: |
+          python3 juego-responsive/validate_responsive.py
           grep -q 'exitApp()' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
           grep -q 'CERRAR APP' project/app/src/main/assets/www/JUGAMOS.html
           grep -q 'function closeApp()' project/app/src/main/assets/www/JUGAMOS.html
+          grep -q 'Fran Jugamos' project/app/src/main/res/values/strings.xml
+          grep -q '@drawable/fran_icon' project/app/src/main/AndroidManifest.xml
+          test -s project/app/src/main/res/drawable/fran_icon.xml
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -52,14 +57,25 @@ jobs:
       - name: Compilar APK independiente
         working-directory: project
         run: gradle :app:assembleDebug --no-daemon
-      - name: Preparar APK
-        run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-JUGAMOS-ADAPTABLE.apk
+      - name: Preparar APK con nombre inequívoco
+        run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-JUGAMOS.apk
+      - name: Verificar APK instalable, nombre e icono finales
+        run: |
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n1)
+          AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n1)
+          test -x "$APKSIGNER"
+          test -x "$AAPT"
+          "$APKSIGNER" verify --verbose Ingles-con-Fran-JUGAMOS.apk
+          BADGING=$("$AAPT" dump badging Ingles-con-Fran-JUGAMOS.apk)
+          echo "$BADGING"
+          echo "$BADGING" | grep -F "application-label:'Fran Jugamos'"
+          echo "$BADGING" | grep -F 'fran_icon'
       - name: Extraer HTML del APK final
         run: |
           rm -rf /tmp/jugamos-responsive-apk
           mkdir -p /tmp/jugamos-responsive-apk
           cd /tmp/jugamos-responsive-apk
-          unzip -q "$GITHUB_WORKSPACE/Ingles-con-Fran-JUGAMOS-ADAPTABLE.apk" assets/www/JUGAMOS.html
+          unzip -q "$GITHUB_WORKSPACE/Ingles-con-Fran-JUGAMOS.apk" assets/www/JUGAMOS.html
       - name: Validar runtime y viewport sobre el APK final
         run: node juego-responsive/validate_responsive_browser.mjs /tmp/jugamos-responsive-apk/assets/www/JUGAMOS.html
       - name: Verificar identidad, audio y cierre final
@@ -71,8 +87,8 @@ jobs:
           grep -q 'function closeApp()' /tmp/jugamos-responsive-apk/assets/www/JUGAMOS.html
       - uses: actions/upload-artifact@v4
         with:
-          name: Ingles-con-Fran-JUGAMOS-ADAPTABLE
-          path: Ingles-con-Fran-JUGAMOS-ADAPTABLE.apk
+          name: Ingles-con-Fran-JUGAMOS
+          path: Ingles-con-Fran-JUGAMOS.apk
       - name: Registrar resultado comprobable
         if: always()
         env:
@@ -86,7 +102,7 @@ jobs:
           CONTENT=$(base64 -w0 /tmp/jugamos_responsive_status.txt)
           CURRENT_SHA=$(gh api repos/${{ github.repository }}/contents/JUGAMOS_RESPONSIVE_BUILD_STATUS.txt --jq .sha 2>/dev/null || true)
           if [ -n "$CURRENT_SHA" ]; then
-            gh api --method PUT repos/${{ github.repository }}/contents/JUGAMOS_RESPONSIVE_BUILD_STATUS.txt -f message="Registrar resultado Jugamos Adaptable" -f content="$CONTENT" -f sha="$CURRENT_SHA" -f branch="main"
+            gh api --method PUT repos/${{ github.repository }}/contents/JUGAMOS_RESPONSIVE_BUILD_STATUS.txt -f message="Registrar resultado Jugamos Identificable" -f content="$CONTENT" -f sha="$CURRENT_SHA" -f branch="main"
           else
-            gh api --method PUT repos/${{ github.repository }}/contents/JUGAMOS_RESPONSIVE_BUILD_STATUS.txt -f message="Registrar resultado Jugamos Adaptable" -f content="$CONTENT" -f branch="main"
+            gh api --method PUT repos/${{ github.repository }}/contents/JUGAMOS_RESPONSIVE_BUILD_STATUS.txt -f message="Registrar resultado Jugamos Identificable" -f content="$CONTENT" -f branch="main"
           fi
