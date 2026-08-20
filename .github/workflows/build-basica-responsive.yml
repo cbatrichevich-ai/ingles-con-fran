@@ -1,4 +1,4 @@
-name: Compilar Ingles con Fran Basica Adaptable
+name: Compilar Ingles con Fran Basica Identificable
 
 on:
   workflow_dispatch:
@@ -6,6 +6,7 @@ on:
     branches: [ main ]
     paths:
       - 'basica-responsive/**'
+      - 'branding/**'
       - '.github/workflows/build-basica-responsive.yml'
 
 permissions:
@@ -24,7 +25,9 @@ jobs:
         run: python3 basica-responsive/apply_responsive.py
       - name: Agregar salida real de la app
         run: python3 basica-responsive/add_exit_app.py
-      - name: Verificar identidad, micrófono y salida
+      - name: Aplicar nombre e icono identificables
+        run: python3 branding/apply_brand.py basic
+      - name: Verificar identidad, micrófono, salida y branding
         run: |
           grep -q 'package com.inglesconfran.app.adaptable;' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
           grep -q 'android.permission.RECORD_AUDIO' project/app/src/main/AndroidManifest.xml
@@ -32,6 +35,9 @@ jobs:
           grep -q '@media (max-height:500px)' project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html
           grep -q 'exitApp()' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
           grep -q 'CERRAR APP' project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html
+          grep -q 'Fran Básico' project/app/src/main/res/values/strings.xml
+          grep -q '@drawable/fran_icon' project/app/src/main/AndroidManifest.xml
+          test -s project/app/src/main/res/drawable/fran_icon.xml
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -47,14 +53,25 @@ jobs:
       - name: Compilar APK independiente
         working-directory: project
         run: gradle :app:assembleDebug --no-daemon
-      - name: Preparar APK
-        run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-BASICA-ADAPTABLE.apk
+      - name: Preparar APK con nombre inequívoco
+        run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-BASICO.apk
+      - name: Verificar APK instalable, nombre e icono finales
+        run: |
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n1)
+          AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n1)
+          test -x "$APKSIGNER"
+          test -x "$AAPT"
+          "$APKSIGNER" verify --verbose Ingles-con-Fran-BASICO.apk
+          BADGING=$("$AAPT" dump badging Ingles-con-Fran-BASICO.apk)
+          echo "$BADGING"
+          echo "$BADGING" | grep -F "application-label:'Fran Básico'"
+          echo "$BADGING" | grep -F 'fran_icon'
       - name: Extraer HTML del APK final
         run: |
           rm -rf /tmp/fran-basic-apk
           mkdir -p /tmp/fran-basic-apk
           cd /tmp/fran-basic-apk
-          unzip -q "$GITHUB_WORKSPACE/Ingles-con-Fran-BASICA-ADAPTABLE.apk" assets/www/ABRIR-INGLES-CON-FRAN.html
+          unzip -q "$GITHUB_WORKSPACE/Ingles-con-Fran-BASICO.apk" assets/www/ABRIR-INGLES-CON-FRAN.html
       - name: Validar runtime sobre el APK final
         run: node basica-responsive/validate_browser.mjs /tmp/fran-basic-apk/assets/www/ABRIR-INGLES-CON-FRAN.html
       - name: Verificar salida en APK final
@@ -63,8 +80,8 @@ jobs:
           grep -q 'closeApp()' /tmp/fran-basic-apk/assets/www/ABRIR-INGLES-CON-FRAN.html
       - uses: actions/upload-artifact@v4
         with:
-          name: Ingles-con-Fran-BASICA-ADAPTABLE
-          path: Ingles-con-Fran-BASICA-ADAPTABLE.apk
+          name: Ingles-con-Fran-BASICO
+          path: Ingles-con-Fran-BASICO.apk
       - name: Registrar resultado comprobable
         if: always()
         env:
@@ -78,7 +95,7 @@ jobs:
           CONTENT=$(base64 -w0 /tmp/basic_status.txt)
           CURRENT_SHA=$(gh api repos/${{ github.repository }}/contents/BASICA_RESPONSIVE_BUILD_STATUS.txt --jq .sha 2>/dev/null || true)
           if [ -n "$CURRENT_SHA" ]; then
-            gh api --method PUT repos/${{ github.repository }}/contents/BASICA_RESPONSIVE_BUILD_STATUS.txt -f message="Registrar resultado Basica Adaptable" -f content="$CONTENT" -f sha="$CURRENT_SHA" -f branch="main"
+            gh api --method PUT repos/${{ github.repository }}/contents/BASICA_RESPONSIVE_BUILD_STATUS.txt -f message="Registrar resultado Basica Identificable" -f content="$CONTENT" -f sha="$CURRENT_SHA" -f branch="main"
           else
-            gh api --method PUT repos/${{ github.repository }}/contents/BASICA_RESPONSIVE_BUILD_STATUS.txt -f message="Registrar resultado Basica Adaptable" -f content="$CONTENT" -f branch="main"
+            gh api --method PUT repos/${{ github.repository }}/contents/BASICA_RESPONSIVE_BUILD_STATUS.txt -f message="Registrar resultado Basica Identificable" -f content="$CONTENT" -f branch="main"
           fi
