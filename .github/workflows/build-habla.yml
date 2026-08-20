@@ -1,0 +1,80 @@
+name: Compilar Fran Habla
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'habla/**'
+      - '.github/workflows/build-habla.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descomprimir base Android congelada
+        run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
+      - name: Generar Fran Habla
+        run: python3 habla/generate_habla.py
+      - name: Validar estructura
+        run: python3 habla/validate_habla.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar runtime y viewport antes de compilar
+        run: node habla/validate_habla_browser.mjs project/app/src/main/assets/www/FRAN-HABLA.html
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compilar APK independiente
+        working-directory: project
+        run: gradle :app:assembleDebug --no-daemon
+      - name: Preparar APK
+        run: cp project/app/build/outputs/apk/debug/app-debug.apk Fran-HABLA.apk
+      - name: Verificar APK instalable, identidad y recursos
+        run: |
+          unzip -t Fran-HABLA.apk >/dev/null
+          unzip -l Fran-HABLA.apk | grep -q 'assets/www/FRAN-HABLA.html'
+          unzip -l Fran-HABLA.apk | grep -q 'res/drawable/fran_habla_icon.xml'
+          grep -q 'android:label="Fran Habla"' project/app/src/main/AndroidManifest.xml
+          grep -q '@drawable/fran_habla_icon' project/app/src/main/AndroidManifest.xml
+          grep -q 'package com.inglesconfran.habla;' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          ! grep -q 'RECORD_AUDIO' project/app/src/main/AndroidManifest.xml
+          ! grep -q 'SpeechRecognizer' project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+      - name: Extraer HTML del APK final
+        run: |
+          rm -rf /tmp/fran-habla-apk
+          mkdir -p /tmp/fran-habla-apk
+          cd /tmp/fran-habla-apk
+          unzip -q "$GITHUB_WORKSPACE/Fran-HABLA.apk" assets/www/FRAN-HABLA.html
+      - name: Validar runtime sobre el APK final
+        run: node habla/validate_habla_browser.mjs /tmp/fran-habla-apk/assets/www/FRAN-HABLA.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Fran-HABLA
+          path: Fran-HABLA.apk
+      - name: Registrar resultado comprobable
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_STATUS: ${{ job.status }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          printf 'status=%s\nrun_id=%s\nrun_attempt=%s\nhead_sha=%s\n' "$BUILD_STATUS" "$RUN_ID" "$RUN_ATTEMPT" "$HEAD_SHA" > /tmp/habla_status.txt
+          CONTENT=$(base64 -w0 /tmp/habla_status.txt)
+          CURRENT_SHA=$(gh api repos/${{ github.repository }}/contents/HABLA_BUILD_STATUS.txt --jq .sha 2>/dev/null || true)
+          if [ -n "$CURRENT_SHA" ]; then
+            gh api --method PUT repos/${{ github.repository }}/contents/HABLA_BUILD_STATUS.txt -f message="Registrar resultado Fran Habla" -f content="$CONTENT" -f sha="$CURRENT_SHA" -f branch="main"
+          else
+            gh api --method PUT repos/${{ github.repository }}/contents/HABLA_BUILD_STATUS.txt -f message="Registrar resultado Fran Habla" -f content="$CONTENT" -f branch="main"
+          fi
