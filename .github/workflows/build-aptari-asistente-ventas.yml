@@ -30,6 +30,7 @@ jobs:
         run: |
           mkdir -p aptari-build/app/src/main/java/com/aptari/asistenteventas
           mkdir -p aptari-build/app/src/main/assets
+          mkdir -p aptari-build/app/src/main/res/values
           cp aptari-asistente-ventas-v0/index.html aptari-build/app/src/main/assets/index.html
 
           cat > aptari-build/settings.gradle <<'EOF'
@@ -67,17 +68,24 @@ jobs:
           }
           EOF
 
+          cat > aptari-build/app/src/main/res/values/strings.xml <<'EOF'
+          <resources>
+              <string name="app_name">APTARI Asistente de Ventas</string>
+          </resources>
+          EOF
+
           cat > aptari-build/app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <application
                   android:allowBackup="true"
-                  android:label="APTARI Asistente de Ventas"
+                  android:label="@string/app_name"
                   android:usesCleartextTraffic="false"
                   android:theme="@android:style/Theme.Material.Light.NoActionBar">
                   <activity
                       android:name=".MainActivity"
                       android:exported="true"
+                      android:label="@string/app_name"
                       android:screenOrientation="portrait">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
