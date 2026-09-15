@@ -3,7 +3,7 @@ name: Compilar APTARI Asistente de Ventas FINAL
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, aptari-evolucion-1 ]
     paths:
       - 'aptari-asistente-ventas-final/**'
       - '.github/workflows/build-aptari-asistente-ventas-final.yml'
@@ -58,8 +58,8 @@ jobs:
               applicationId 'com.aptari.asistenteventas'
               minSdk 24
               targetSdk 35
-              versionCode 10000
-              versionName '1.0.0'
+              versionCode 10100
+              versionName '1.1.0'
             }
             buildTypes {
               release {
@@ -161,6 +161,9 @@ jobs:
           grep -q 'ASISTENTE DE VENTAS' "$H"
           grep -q "aptari_asistente_ventas_v1" "$H"
           grep -q 'AGREGAR PRIMER CLIENTE' "$H"
+          grep -q '¿Qué sigue?' "$H"
+          grep -q 'PRÓXIMA ACCIÓN' "$H"
+          grep -q 'Mañana' "$H"
           if grep -qiE 'V0|prueba funcional|datos de demostración|Mi Oficina|Enviar presupuesto|Presupuesto enviado|APB|a prueba de boludos' "$H"; then
             echo 'Texto de prueba u obsoleto detectado' >&2; exit 1
           fi
@@ -180,6 +183,8 @@ jobs:
           unzip -p "$APK" assets/index.html > /tmp/index-final.html
           grep -q 'APTARI' /tmp/index-final.html
           grep -q 'aptari_asistente_ventas_v1' /tmp/index-final.html
+          grep -q '¿Qué sigue?' /tmp/index-final.html
+          grep -q 'PRÓXIMA ACCIÓN' /tmp/index-final.html
           if grep -qiE 'V0|prueba funcional|datos de demostración|APB|a prueba de boludos' /tmp/index-final.html; then
             echo 'APK contiene texto no comercial' >&2; exit 1
           fi
@@ -188,24 +193,24 @@ jobs:
           APKSIGNER_JAR=$(find "$ANDROID_HOME/build-tools" -type f -path '*/lib/apksigner.jar' | sort -V | tail -1)
           "$AAPT" dump badging "$APK" | tee /tmp/badging.txt
           grep -q "package: name='com.aptari.asistenteventas'" /tmp/badging.txt
-          grep -q "versionName='1.0.0'" /tmp/badging.txt
+          grep -q "versionName='1.1.0'" /tmp/badging.txt
           grep -q "application-label:'APTARI Asistente de Ventas'" /tmp/badging.txt
           "$AAPT" dump permissions "$APK" | tee /tmp/permissions.txt
           if grep -q '^uses-permission:' /tmp/permissions.txt; then
             echo 'APK solicita permisos inesperados' >&2; exit 1
           fi
-          "$ZIPALIGN" -p -f 4 "$APK" APTARI-Asistente-de-Ventas-Android-v1.0.0-UNSIGNED-ALIGNED.apk
+          "$ZIPALIGN" -p -f 4 "$APK" APTARI-Asistente-de-Ventas-Android-v1.1.0-UNSIGNED-ALIGNED.apk
           cp "$APKSIGNER_JAR" apksigner.jar
-          sha256sum APTARI-Asistente-de-Ventas-Android-v1.0.0-UNSIGNED-ALIGNED.apk > APK_UNSIGNED_SHA256.txt
+          sha256sum APTARI-Asistente-de-Ventas-Android-v1.1.0-UNSIGNED-ALIGNED.apk > APK_UNSIGNED_SHA256.txt
           cp /tmp/badging.txt APK_BADGING.txt
           cp /tmp/permissions.txt APK_PERMISSIONS.txt
 
       - name: Subir candidato para firma privada
         uses: actions/upload-artifact@v4
         with:
-          name: APTARI-Asistente-de-Ventas-FINAL-para-firma
+          name: APTARI-Asistente-de-Ventas-E1-para-firma
           path: |
-            APTARI-Asistente-de-Ventas-Android-v1.0.0-UNSIGNED-ALIGNED.apk
+            APTARI-Asistente-de-Ventas-Android-v1.1.0-UNSIGNED-ALIGNED.apk
             apksigner.jar
             APK_UNSIGNED_SHA256.txt
             APK_BADGING.txt
