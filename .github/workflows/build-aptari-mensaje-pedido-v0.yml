@@ -14,7 +14,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -70,6 +70,40 @@ jobs:
         working-directory: aptari-mensaje-pedido-v0
         run: gradle :app:assembleDebug --no-daemon --stacktrace
 
+      - name: Habilitar KVM para emulador
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm || true
+
+      - name: Prueba representativa Android 15
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            set -euo pipefail
+            APK=aptari-mensaje-pedido-v0/app/build/outputs/apk/debug/app-debug.apk
+            adb install -r "$APK"
+            adb shell am force-stop com.aptari.mensajeapedido
+            adb shell am start -W -n com.aptari.mensajeapedido/.MainActivity | tee /tmp/aptari-start.txt
+            grep -q 'Status: ok' /tmp/aptari-start.txt
+            sleep 8
+            adb shell pidof com.aptari.mensajeapedido | tee /tmp/aptari-pid.txt
+            test -s /tmp/aptari-pid.txt
+            if adb logcat -d -t 400 | grep -E 'FATAL EXCEPTION|Process: com\.aptari\.mensajeapedido' ; then
+              echo 'La app registró un fallo fatal en el arranque' >&2
+              exit 1
+            fi
+            adb exec-out screencap -p > APTARI-Mensaje-a-Pedido-V0-RUNTIME.png
+            test -s APTARI-Mensaje-a-Pedido-V0-RUNTIME.png
+            adb shell uiautomator dump /sdcard/aptari-window.xml >/dev/null || true
+            adb pull /sdcard/aptari-window.xml APTARI-Mensaje-a-Pedido-V0-WINDOW.xml || true
+
       - name: Verificar APK exacto
         run: |
           set -euo pipefail
@@ -110,4 +144,6 @@ jobs:
             APTARI-Mensaje-a-Pedido-V0-BADGING.txt
             APTARI-Mensaje-a-Pedido-V0-PERMISSIONS.txt
             APTARI-Mensaje-a-Pedido-V0-SIGNATURE.txt
+            APTARI-Mensaje-a-Pedido-V0-RUNTIME.png
+            APTARI-Mensaje-a-Pedido-V0-WINDOW.xml
           if-no-files-found: error
