@@ -120,9 +120,7 @@ jobs:
             adb push /tmp/aptari-pedido.ogg /data/local/tmp/aptari-pedido.ogg
             adb shell run-as com.aptari.mensajeapedido mkdir -p files
             adb shell run-as com.aptari.mensajeapedido cp /data/local/tmp/aptari-pedido.ogg files/aptari-test.ogg
-            adb shell run-as com.aptari.mensajeapedido ls -l files/aptari-test.ogg
-            SIZE=$(adb shell run-as com.aptari.mensajeapedido stat -c %s files/aptari-test.ogg | tr -d '\r')
-            test "$SIZE" -gt 1000
+            adb shell run-as com.aptari.mensajeapedido ls -l files/aptari-test.ogg | grep -q '34845'
             adb shell am start -W -a android.intent.action.SEND -t audio/ogg --eu android.intent.extra.STREAM file:///data/user/0/com.aptari.mensajeapedido/files/aptari-test.ogg -n com.aptari.mensajeapedido/.MainActivity > /tmp/aptari-audio-start.txt
             cat /tmp/aptari-audio-start.txt
             grep -q 'Status: ok' /tmp/aptari-audio-start.txt
