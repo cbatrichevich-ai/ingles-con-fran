@@ -1,0 +1,47 @@
+name: Candidata integral Ingles con Fran
+on:
+  push:
+    branches: [ agent/auditoria-microfono-punta-a-punta ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
+      - name: Aplicar correcciones de prueba física
+        run: python3 lab/apply_final_physical_fixes.py
+      - name: Controles funcionales
+        run: |
+          H=project/app/src/main/assets/www/ABRIR-INGLES-CON-FRAN.html
+          J=project/app/src/main/java/com/inglesconfran/app/MainActivity.java
+          M=project/app/src/main/AndroidManifest.xml
+          test -f project/app/src/main/assets/www/audio/187.wav
+          grep -q 'RECORD_AUDIO' "$M"
+          grep -q 'EXTRA_LANGUAGE,"en-US"' "$J"
+          grep -q 'cancelListening' "$J"
+          grep -q "TWELVE:\['TWELV'\]" "$H"
+          grep -q "CAT:\['CAP','KAT'\]" "$H"
+          grep -q "HAND:\['HEND','AND'\]" "$H"
+          grep -q "en.onclick=()=>playContent(it.enAudio,it.en,true)" "$H"
+          ! grep -q "en.onclick=()=>playHoraV7" "$H"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compilar APK
+        working-directory: project
+        run: gradle :app:assembleDebug --no-daemon
+      - name: Empaquetar
+        run: cp project/app/build/outputs/apk/debug/app-debug.apk Ingles-con-Fran-ULTIMA-PRUEBA.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ingles-con-Fran-ULTIMA-PRUEBA
+          path: Ingles-con-Fran-ULTIMA-PRUEBA.apk

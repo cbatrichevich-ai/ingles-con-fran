@@ -1,0 +1,42 @@
+name: Transcribir audios finales
+on:
+  push:
+    branches: [ agent/auditoria-microfono-punta-a-punta ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transcribe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: unzip -q Ingles-con-Fran-ANDROID-PROYECTO-PARA-COMPILAR.zip
+      - name: Instalar ffmpeg y Whisper local
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pip install -q openai-whisper
+      - name: Transcribir 179-215
+        run: |
+          python3 - <<'PY'
+          import whisper
+          from pathlib import Path
+          model=whisper.load_model('tiny')
+          ad=Path('project/app/src/main/assets/www/audio')
+          out=[]
+          for n in range(179,216):
+              f=ad/f'{n:03d}.wav'
+              if not f.exists():
+                  continue
+              r=model.transcribe(str(f),fp16=False)
+              line=f'{n:03d}.wav => {r["text"].strip()}'
+              print(line)
+              out.append(line)
+          Path('transcripcion-179-215.txt').write_text('\n'.join(out),encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: transcripcion-audios-179-215
+          path: transcripcion-179-215.txt
