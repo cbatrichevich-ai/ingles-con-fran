@@ -52,7 +52,6 @@ jobs:
           grep -q 'AptariNative.pickAudio' app/src/main/assets/index.html
           grep -q 'No completa información' app/src/main/assets/index.html
           grep -q 'vosk-android:0.3.75' app/build.gradle
-          grep -q 'ACTION_SEND' app/src/main/java/com/aptari/mensajeapedido/MainActivity.java || true
           python3 - <<'PY'
           from pathlib import Path
           import re
@@ -77,6 +76,7 @@ jobs:
           APK=aptari-mensaje-pedido-v0/app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)
           "$AAPT" dump badging "$APK" | tee /tmp/badging.txt
           grep -q "package: name='com.aptari.mensajeapedido'" /tmp/badging.txt
           grep -q "versionName='0.1.0-lab'" /tmp/badging.txt
@@ -86,6 +86,8 @@ jobs:
             echo 'La V0 no debe pedir permisos peligrosos ni generales' >&2
             exit 1
           fi
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee /tmp/signature.txt
+          grep -q 'Verified using v2 scheme (APK Signature Scheme v2): true' /tmp/signature.txt
           unzip -p "$APK" assets/index.html > /tmp/index-from-apk.html
           grep -q 'Mensaje → Pedido' /tmp/index-from-apk.html
           grep -q 'IMPORTAR AUDIO' /tmp/index-from-apk.html
@@ -95,6 +97,7 @@ jobs:
           sha256sum APTARI-Mensaje-a-Pedido-V0-Android.apk > APTARI-Mensaje-a-Pedido-V0-SHA256.txt
           cp /tmp/badging.txt APTARI-Mensaje-a-Pedido-V0-BADGING.txt
           cp /tmp/permissions.txt APTARI-Mensaje-a-Pedido-V0-PERMISSIONS.txt
+          cp /tmp/signature.txt APTARI-Mensaje-a-Pedido-V0-SIGNATURE.txt
           ls -lh APTARI-Mensaje-a-Pedido-V0-Android.apk
 
       - name: Subir laboratorio instalable
@@ -106,4 +109,5 @@ jobs:
             APTARI-Mensaje-a-Pedido-V0-SHA256.txt
             APTARI-Mensaje-a-Pedido-V0-BADGING.txt
             APTARI-Mensaje-a-Pedido-V0-PERMISSIONS.txt
+            APTARI-Mensaje-a-Pedido-V0-SIGNATURE.txt
           if-no-files-found: error
