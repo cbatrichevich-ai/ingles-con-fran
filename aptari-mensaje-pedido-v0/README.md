@@ -23,3 +23,5 @@ Convertir un mensaje de WhatsApp, escrito o de audio, en un borrador de pedido r
 
 ## Nota técnica
 La compilación de laboratorio descarga `vosk-model-small-es-0.42` durante GitHub Actions y lo incorpora al APK. El modelo es Apache 2.0 y está pensado para dispositivos móviles.
+
+El APK de laboratorio se verifica también con `apksigner` antes de publicarse como artefacto de prueba.
