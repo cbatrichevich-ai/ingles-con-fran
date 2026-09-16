@@ -86,19 +86,17 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            set -eu
-            APK=aptari-mensaje-pedido-v0/app/build/outputs/apk/debug/app-debug.apk
-            adb install -r "$APK"
+            adb install -r aptari-mensaje-pedido-v0/app/build/outputs/apk/debug/app-debug.apk
             adb shell am force-stop com.aptari.mensajeapedido
-            adb shell am start -W -n com.aptari.mensajeapedido/.MainActivity | tee /tmp/aptari-start.txt
+            adb shell am start -W -n com.aptari.mensajeapedido/.MainActivity > /tmp/aptari-start.txt
+            cat /tmp/aptari-start.txt
             grep -q 'Status: ok' /tmp/aptari-start.txt
             sleep 8
-            adb shell pidof com.aptari.mensajeapedido | tee /tmp/aptari-pid.txt
+            adb shell pidof com.aptari.mensajeapedido > /tmp/aptari-pid.txt
+            cat /tmp/aptari-pid.txt
             test -s /tmp/aptari-pid.txt
-            if adb logcat -d -t 400 | grep -E 'FATAL EXCEPTION|Process: com\.aptari\.mensajeapedido' ; then
-              echo 'La app registró un fallo fatal en el arranque' >&2
-              exit 1
-            fi
+            adb logcat -d -t 400 > /tmp/aptari-logcat.txt
+            ! grep -E 'FATAL EXCEPTION|Process: com\.aptari\.mensajeapedido' /tmp/aptari-logcat.txt
             adb exec-out screencap -p > APTARI-Mensaje-a-Pedido-V0-RUNTIME.png
             test -s APTARI-Mensaje-a-Pedido-V0-RUNTIME.png
             adb shell uiautomator dump /sdcard/aptari-window.xml >/dev/null || true
