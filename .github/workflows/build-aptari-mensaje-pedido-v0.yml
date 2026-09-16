@@ -1,0 +1,109 @@
+name: Compilar APTARI Mensaje a Pedido V0
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ aptari-mensaje-pedido-v0 ]
+    paths:
+      - 'aptari-mensaje-pedido-v0/**'
+      - '.github/workflows/build-aptari-mensaje-pedido-v0.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Preparar modelo de voz español
+        working-directory: aptari-mensaje-pedido-v0
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/assets
+          curl -fL --retry 3 --retry-delay 3 \
+            https://alphacephei.com/vosk/models/vosk-model-small-es-0.42.zip \
+            -o /tmp/vosk-es.zip
+          rm -rf app/src/main/assets/model-es /tmp/vosk-es
+          mkdir -p /tmp/vosk-es
+          unzip -q /tmp/vosk-es.zip -d /tmp/vosk-es
+          mv /tmp/vosk-es/vosk-model-small-es-0.42 app/src/main/assets/model-es
+          printf '%s\n' 'aptari-vosk-es-0.42-v1' > app/src/main/assets/model-es/uuid
+          test -s app/src/main/assets/model-es/am/final.mdl
+          du -sh app/src/main/assets/model-es
+
+      - name: Controles estáticos
+        working-directory: aptari-mensaje-pedido-v0
+        run: |
+          set -euo pipefail
+          grep -q 'Mensaje → Pedido' app/src/main/assets/index.html
+          grep -q 'IMPORTAR AUDIO' app/src/main/assets/index.html
+          grep -q 'AptariNative.pickAudio' app/src/main/assets/index.html
+          grep -q 'No completa información' app/src/main/assets/index.html
+          grep -q 'vosk-android:0.3.75' app/build.gradle
+          grep -q 'ACTION_SEND' app/src/main/java/com/aptari/mensajeapedido/MainActivity.java || true
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('app/src/main/assets/index.html').read_text(encoding='utf-8')
+          m=re.search(r'<script>(.*)</script>',s,re.S)
+          assert m, 'No se encontró script principal'
+          Path('/tmp/aptari-app.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/aptari-app.js
+          if grep -qiE 'sitio web ficticio|pago ficticio|www\.|https?://' app/src/main/assets/index.html; then
+            echo 'Se detectó URL o referencia web inesperada en la interfaz' >&2
+            exit 1
+          fi
+
+      - name: Compilar APK de laboratorio
+        working-directory: aptari-mensaje-pedido-v0
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Verificar APK exacto
+        run: |
+          set -euo pipefail
+          APK=aptari-mensaje-pedido-v0/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)
+          "$AAPT" dump badging "$APK" | tee /tmp/badging.txt
+          grep -q "package: name='com.aptari.mensajeapedido'" /tmp/badging.txt
+          grep -q "versionName='0.1.0-lab'" /tmp/badging.txt
+          grep -q "application-label:'APTARI Mensaje a Pedido'" /tmp/badging.txt
+          "$AAPT" dump permissions "$APK" | tee /tmp/permissions.txt
+          if grep -q '^uses-permission:' /tmp/permissions.txt; then
+            echo 'La V0 no debe pedir permisos peligrosos ni generales' >&2
+            exit 1
+          fi
+          unzip -p "$APK" assets/index.html > /tmp/index-from-apk.html
+          grep -q 'Mensaje → Pedido' /tmp/index-from-apk.html
+          grep -q 'IMPORTAR AUDIO' /tmp/index-from-apk.html
+          unzip -l "$APK" | grep -q 'assets/model-es/am/final.mdl'
+          unzip -l "$APK" | grep -q 'lib/arm64-v8a/'
+          cp "$APK" APTARI-Mensaje-a-Pedido-V0-Android.apk
+          sha256sum APTARI-Mensaje-a-Pedido-V0-Android.apk > APTARI-Mensaje-a-Pedido-V0-SHA256.txt
+          cp /tmp/badging.txt APTARI-Mensaje-a-Pedido-V0-BADGING.txt
+          cp /tmp/permissions.txt APTARI-Mensaje-a-Pedido-V0-PERMISSIONS.txt
+          ls -lh APTARI-Mensaje-a-Pedido-V0-Android.apk
+
+      - name: Subir laboratorio instalable
+        uses: actions/upload-artifact@v4
+        with:
+          name: APTARI-Mensaje-a-Pedido-V0-Android
+          path: |
+            APTARI-Mensaje-a-Pedido-V0-Android.apk
+            APTARI-Mensaje-a-Pedido-V0-SHA256.txt
+            APTARI-Mensaje-a-Pedido-V0-BADGING.txt
+            APTARI-Mensaje-a-Pedido-V0-PERMISSIONS.txt
+          if-no-files-found: error
