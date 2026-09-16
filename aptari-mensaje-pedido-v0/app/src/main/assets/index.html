@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>APTARI — Mensaje a Pedido</title>
+<style>
+:root{
+  --ink:#143b46;--ink2:#244f59;--teal:#1f9e9b;--teal2:#72d7d0;--bg:#f4f8f8;
+  --card:#fff;--line:#dbe7e8;--muted:#6d8288;--warn:#fff4d9;--danger:#a84554;
+  --soft:#e9f7f6;--violet:#f2effa;--shadow:0 10px 30px rgba(20,59,70,.08);
+}
+*{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+body{min-height:100vh}.app{max-width:760px;margin:0 auto;padding-bottom:100px}
+header{background:linear-gradient(135deg,#0e5867,#157681);color:white;padding:22px 20px 26px;border-radius:0 0 28px 28px;box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.08em;font-size:14px}.mark{width:30px;height:30px;border:2px solid #fff;border-radius:9px;display:grid;place-items:center;font-size:19px}
+h1{font-size:29px;line-height:1.05;margin:22px 0 7px;letter-spacing:-.03em}.sub{font-size:14px;line-height:1.45;color:#dff7f5;max-width:580px}
+.lab{display:inline-block;margin-top:14px;padding:7px 11px;border-radius:999px;background:rgba(255,255,255,.14);font-size:11px;font-weight:800;letter-spacing:.06em}
+main{padding:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:17px;margin-bottom:14px;box-shadow:var(--shadow)}
+.step{display:flex;gap:11px;align-items:flex-start;margin-bottom:12px}.n{width:30px;height:30px;flex:0 0 30px;border-radius:10px;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:800}.step h2{font-size:17px;margin:1px 0 3px}.step p{font-size:12px;color:var(--muted);margin:0;line-height:1.4}
+.modeRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 12px}.mode{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:15px;padding:14px 10px;font-weight:800;font-size:13px}.mode.active{background:var(--soft);border-color:var(--teal);color:#126c6a}.mode .big{display:block;font-size:21px;margin-bottom:5px}
+textarea,input{width:100%;border:1px solid #cbdadc;border-radius:14px;padding:13px 14px;font:inherit;color:#163e48;background:#fff;outline:none}textarea:focus,input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(31,158,155,.10)}
+#sourceText{min-height:145px;resize:vertical;line-height:1.45;font-size:14px}.hint{font-size:11px;color:var(--muted);margin:8px 2px 0;line-height:1.45}
+.audioBox{display:none;border:1px dashed #a9c8ca;background:#f9fcfc;border-radius:16px;padding:14px}.audioBox.show{display:block}.audioName{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.audioStatus{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.4}
+.btn{border:0;border-radius:14px;padding:14px 16px;font-weight:800;font-size:13px;letter-spacing:.01em;cursor:pointer}.primary{background:var(--ink);color:#fff;width:100%;margin-top:13px}.secondary{background:var(--soft);color:#126c6a}.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}.btn:disabled{opacity:.5}
+.status{display:none;margin-top:12px;border-radius:13px;padding:11px 12px;font-size:12px;line-height:1.4;background:var(--soft);color:#126c6a}.status.show{display:block}.status.error{background:#fcecef;color:var(--danger)}
+.result{display:none}.result.show{display:block}.resultHead{display:flex;justify-content:space-between;align-items:center;gap:10px}.badge{font-size:10px;background:var(--soft);color:#126c6a;border-radius:999px;padding:7px 9px;font-weight:800}
+.grid{display:grid;grid-template-columns:1fr;gap:10px}.field label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#6c8187;font-weight:800;margin:0 0 5px 4px}.field textarea{min-height:82px;resize:vertical}.field input,.field textarea{font-size:13px}
+.doubts{margin-top:12px;background:var(--warn);border-radius:14px;padding:12px}.doubts strong{font-size:12px}.doubts ul{margin:8px 0 0;padding-left:18px}.doubts li{font-size:12px;line-height:1.5;margin:3px 0}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.actions .btn{width:100%}.sourceLabel{display:flex;justify-content:space-between;align-items:center;margin:9px 2px 6px}.sourceLabel span{font-size:11px;color:var(--muted)}
+.notice{font-size:11px;line-height:1.5;color:#5f757b;background:#edf4f5;border-radius:13px;padding:11px 12px;margin-top:12px}.notice b{color:var(--ink)}
+.footerNote{text-align:center;color:#839499;font-size:10px;padding:4px 18px 0;line-height:1.5}
+@media(min-width:620px){main{padding:20px}.grid.two{grid-template-columns:1fr 1fr}.app{padding-bottom:70px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand"><div class="mark">A</div>APTARI</div>
+  <h1>Mensaje → Pedido</h1>
+  <div class="sub">Pegá un mensaje o importá un audio de WhatsApp. La app arma un borrador de pedido para revisar, corregir y copiar.</div>
+  <div class="lab">LABORATORIO V0 · NO ENVÍA NADA</div>
+</header>
+<main>
+  <section class="card">
+    <div class="step"><div class="n">1</div><div><h2>Traé el mensaje</h2><p>Texto copiado o audio compartido/importado. La app no lee WhatsApp por su cuenta.</p></div></div>
+    <div class="modeRow">
+      <button class="mode active" id="modeText"><span class="big">Aa</span>PEGAR TEXTO</button>
+      <button class="mode" id="modeAudio"><span class="big">▶</span>IMPORTAR AUDIO</button>
+    </div>
+    <div id="textPane">
+      <div class="sourceLabel"><b style="font-size:12px">Mensaje o conversación</b><span>Podés pegar varios mensajes juntos</span></div>
+      <textarea id="sourceText" placeholder="Pegá acá el mensaje de WhatsApp…"></textarea>
+      <div class="hint">La prueba funciona mejor cuando el mensaje incluye productos, cantidades y cualquier detalle de entrega.</div>
+    </div>
+    <div class="audioBox" id="audioPane">
+      <button class="btn secondary" id="pickAudio" style="width:100%">ELEGIR AUDIO DEL TELÉFONO</button>
+      <div style="height:11px"></div>
+      <div class="audioName" id="audioName">Todavía no elegiste ningún audio</div>
+      <div class="audioStatus" id="audioStatus">Reconocimiento de voz: preparando…</div>
+      <div class="notice"><b>También podés probar desde WhatsApp:</b> compartir un audio y elegir APTARI Mensaje a Pedido si aparece entre las opciones.</div>
+    </div>
+    <div class="status" id="nativeStatus"></div>
+    <button class="btn primary" id="analyze">ANALIZAR MENSAJE</button>
+  </section>
+
+  <section class="card result" id="resultCard">
+    <div class="step"><div class="n">2</div><div style="flex:1"><div class="resultHead"><div><h2 style="margin:1px 0 3px">Revisá el borrador</h2><p style="margin:0;color:var(--muted);font-size:12px">Todo es editable. Lo dudoso queda marcado.</p></div><div class="badge" id="originBadge">TEXTO</div></div></div></div>
+    <div class="grid two">
+      <div class="field"><label>Cliente</label><input id="client" placeholder="Completar si no aparece en el mensaje"></div>
+      <div class="field"><label>Entrega / retiro</label><input id="delivery" placeholder="No detectado"></div>
+      <div class="field"><label>Fecha / hora</label><input id="when" placeholder="No detectado"></div>
+      <div class="field"><label>Importe mencionado</label><input id="amount" placeholder="No detectado"></div>
+    </div>
+    <div class="field" style="margin-top:10px"><label>Pedido detectado</label><textarea id="order" placeholder="Revisar productos y cantidades"></textarea></div>
+    <div class="field" style="margin-top:10px"><label>Observaciones detectadas</label><textarea id="notes" placeholder="Sin observaciones detectadas"></textarea></div>
+    <div class="doubts"><strong>DUDAS PARA CONFIRMAR</strong><ul id="doubtList"></ul></div>
+    <div class="actions">
+      <button class="btn secondary" id="copyOrder">COPIAR PEDIDO</button>
+      <button class="btn ghost" id="clearAll">LIMPIAR</button>
+    </div>
+  </section>
+
+  <div class="footerNote">APTARI · Prueba funcional. No completa información que no aparece en el mensaje y no envía nada automáticamente.</div>
+</main>
+</div>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const state={mode:'text',origin:'TEXTO',confidence:null};
+
+function setMode(mode){
+  state.mode=mode;
+  $('modeText').classList.toggle('active',mode==='text');
+  $('modeAudio').classList.toggle('active',mode==='audio');
+  $('textPane').style.display=mode==='text'?'block':'none';
+  $('audioPane').classList.toggle('show',mode==='audio');
+}
+function showStatus(msg,error){
+  const el=$('nativeStatus'); el.textContent=msg||''; el.classList.toggle('show',!!msg); el.classList.toggle('error',!!error);
+}
+function clean(s){return (s||'').replace(/\s+/g,' ').replace(/\s+([,.!?;:])/g,'$1').trim()}
+function fold(s){return clean(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
+function splitClauses(text){
+  return text.replace(/\r/g,'\n').split(/\n+|[.;!?]+|,(?=\s+(?:y\s+)?(?:quiero|necesito|dame|dáme|mandame|mandáme|agrega|agregá|suma|sumá|para|retiro|retira|envio|envío|delivery|paso|mañana|hoy))/i).map(clean).filter(Boolean);
+}
+function detectClient(text){
+  const m=text.match(/\b(?:soy|mi nombre es|habla)\s+([A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+){0,2})\b/i);
+  if(!m)return '';
+  let v=clean(m[1]).replace(/\b(?:y|quiero|necesito|te|les)$/i,'').trim();
+  return v.length>=2?v:'';
+}
+function detectDelivery(text){
+  const f=fold(text);
+  const picks=[];
+  if(/\b(?:paso a buscar|paso a retirar|retiro|retira|retirar|busco|buscar)\b/.test(f)) picks.push('Retiro');
+  if(/\b(?:envio|delivery|mandalo|mandamelo|llevalo|llevar|entrega)\b/.test(f)) picks.push('Envío / entrega');
+  const addr=text.match(/\b(?:a|en|por)\s+(?:la\s+)?(?:calle\s+)?([A-Za-zÁÉÍÓÚÜÑáéíóúüñ .]+\s+\d{2,5})\b/);
+  if(addr)picks.push(clean(addr[1]));
+  return [...new Set(picks)].join(' · ');
+}
+function detectWhen(text){
+  const f=fold(text); const out=[];
+  const rel=f.match(/\b(pasado manana|manana|hoy)\b/); if(rel) out.push(rel[1]==='manana'?'Mañana':rel[1]==='pasado manana'?'Pasado mañana':'Hoy');
+  if(!rel){const day=f.match(/\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo)\b/); if(day)out.push(day[1].charAt(0).toUpperCase()+day[1].slice(1));}
+  const date=text.match(/\b\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?\b/); if(date)out.push(date[0]);
+  const time=text.match(/\b(?:a\s+las\s+)?(\d{1,2}(?::\d{2})?)\s*(?:hs?|horas?)\b/i); if(time)out.push(time[1]+' hs');
+  return [...new Set(out)].join(' · ');
+}
+function detectAmount(text){
+  const m=text.match(/(?:\$\s*([\d.]+(?:,\d{1,2})?)|\b([\d.]+(?:,\d{1,2})?)\s*(?:pesos|ars)\b)/i);
+  if(!m)return '';
+  const n=m[1]||m[2]; return '$ '+n;
+}
+const qty='(?:\\d+|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|media\\s+docena|una?\\s+docena|docena)';
+function orderClauses(text){
+  const clauses=splitClauses(text), found=[];
+  const qtyRe=new RegExp('\\b'+qty+'\\b','i');
+  const intent=/\b(?:quiero|necesito|dame|dáme|mandame|mandáme|manda|mandá|agrega|agregá|suma|sumá|serian|serían|pedido|anotame|anotáme)\b/i;
+  const logistics=/^(?:para\s+)?(?:hoy|mañana|pasado mañana|lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado|domingo)\b|\b(?:paso a buscar|retiro|retira|delivery|envío|envio|entrega|transfer|efectivo|pesos)\b/i;
+  clauses.forEach(c=>{
+    if(logistics.test(c) && !intent.test(c) && !qtyRe.test(c)) return;
+    if(intent.test(c) || qtyRe.test(c)){
+      let v=c.replace(/^\s*(?:hola|buen día|buen dia|buenas|por favor)\b[,: -]*/i,'').trim();
+      if(v.length>2 && !found.includes(v))found.push(v);
+    }
+  });
+  return found;
+}
+function detectNotes(text,order){
+  const clauses=splitClauses(text), notes=[];
+  clauses.forEach(c=>{
+    const f=fold(c);
+    if(/\b(?:sin|aparte|separado|ojo|aclar|por favor|bien cocid|poco|mucho|color|talle|modelo)\b/.test(f) && !order.includes(c)) notes.push(c);
+  });
+  return [...new Set(notes)].join('\n');
+}
+function analyzeText(text, origin){
+  text=clean(text); if(!text){showStatus('Pegá un mensaje o importá un audio antes de analizar.',true);return;}
+  showStatus('',false);
+  const order=orderClauses(text);
+  const data={client:detectClient(text),delivery:detectDelivery(text),when:detectWhen(text),amount:detectAmount(text),order:order.join('\n'),notes:''};
+  data.notes=detectNotes(text,order);
+  const doubts=[];
+  if(!data.client)doubts.push('Cliente no identificado en el mensaje. Completar si corresponde.');
+  if(!data.order)doubts.push('No pude aislar productos y cantidades con seguridad. Revisar el mensaje original.');
+  else if(!new RegExp('\\b'+qty+'\\b','i').test(data.order))doubts.push('Hay intención de compra, pero no detecté cantidades claras.');
+  if(!data.delivery)doubts.push('No se detectó si es entrega, envío o retiro.');
+  if(!data.when)doubts.push('No se detectó fecha u horario.');
+  if(origin==='AUDIO'){
+    doubts.unshift('La transcripción de audio es automática: escuchar/revisar antes de confirmar el pedido.');
+    if(state.confidence!==null && state.confidence<0.70)doubts.unshift('El reconocimiento tuvo confianza baja en varias palabras. Revisar especialmente productos, cantidades y nombres.');
+  }
+  fill(data,doubts,origin);
+}
+function fill(d,doubts,origin){
+  $('client').value=d.client;$('delivery').value=d.delivery;$('when').value=d.when;$('amount').value=d.amount;$('order').value=d.order;$('notes').value=d.notes;
+  $('originBadge').textContent=origin||'TEXTO';
+  const ul=$('doubtList');ul.innerHTML='';(doubts.length?doubts:['No se detectaron faltantes obvios. Igual conviene revisar antes de copiar.']).forEach(x=>{const li=document.createElement('li');li.textContent=x;ul.appendChild(li)});
+  $('resultCard').classList.add('show'); setTimeout(()=>$('resultCard').scrollIntoView({behavior:'smooth',block:'start'}),80);
+}
+function finalText(){
+  const lines=['PEDIDO'];
+  const add=(label,val)=>{val=clean(val);if(val)lines.push(label+': '+val)};
+  add('Cliente',$('client').value);
+  const order=clean($('order').value); if(order){lines.push('Pedido:'); $('order').value.split(/\n+/).map(clean).filter(Boolean).forEach(x=>lines.push('- '+x));}
+  add('Entrega / retiro',$('delivery').value); add('Fecha / hora',$('when').value); add('Importe mencionado',$('amount').value); add('Observaciones',$('notes').value);
+  const doubts=[...$('doubtList').querySelectorAll('li')].map(x=>clean(x.textContent)).filter(Boolean);
+  if(doubts.length){lines.push('Dudas para confirmar:');doubts.forEach(x=>lines.push('- '+x));}
+  return lines.join('\n');
+}
+function clearAll(){
+  $('sourceText').value='';['client','delivery','when','amount','order','notes'].forEach(id=>$(id).value='');$('doubtList').innerHTML='';$('resultCard').classList.remove('show');$('audioName').textContent='Todavía no elegiste ningún audio';showStatus('',false);state.confidence=null;state.origin='TEXTO';setMode('text');window.scrollTo({top:0,behavior:'smooth'});
+}
+
+$('modeText').onclick=()=>setMode('text');$('modeAudio').onclick=()=>setMode('audio');
+$('pickAudio').onclick=()=>{if(window.AptariNative&&AptariNative.pickAudio)AptariNative.pickAudio();else showStatus('La importación de audio funciona dentro de la app Android.',true)};
+$('analyze').onclick=()=>analyzeText($('sourceText').value,state.origin);
+$('copyOrder').onclick=()=>{const t=finalText();if(window.AptariNative&&AptariNative.copyText)AptariNative.copyText(t);else if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>window.Aptari.onCopied())};
+$('clearAll').onclick=clearAll;
+
+window.Aptari={
+  onModelState(s){$('audioStatus').textContent=s==='ready'?'Reconocimiento de voz: listo para probar':'Reconocimiento de voz: preparando…';},
+  onNativeStatus(msg){showStatus(msg,false)},
+  onNativeError(msg){showStatus(msg,true);$('audioStatus').textContent='Reconocimiento de voz: hubo un problema';},
+  onAudioPicked(name,status){setMode('audio');$('audioName').textContent=name||'Audio seleccionado';$('audioStatus').textContent=status==='waiting'?'Audio recibido. Preparando reconocimiento…':'Transcribiendo audio…';showStatus('Procesando audio. En audios largos puede tardar un poco.',false);},
+  onTranscriptReady(text,name,confidence){state.origin='AUDIO';state.confidence=Number.isFinite(Number(confidence))?Number(confidence):null;$('sourceText').value=text||'';$('audioName').textContent=name||'Audio transcripto';$('audioStatus').textContent='Transcripción terminada. Revisala antes de confirmar.';showStatus('Audio transcripto. Armé el borrador para revisión.',false);analyzeText(text,'AUDIO');},
+  onAudioFailed(){$('audioStatus').textContent='No se pudo transcribir este audio.';},
+  onSharedText(text){state.origin='TEXTO';setMode('text');$('sourceText').value=text||'';showStatus('Texto compartido recibido.',false);analyzeText(text,'TEXTO');},
+  onCopied(){showStatus('Pedido copiado al portapapeles.',false)}
+};
+try{if(window.AptariNative&&AptariNative.modelState)window.Aptari.onModelState(AptariNative.modelState())}catch(e){}
+setMode('text');
+})();
+</script>
+</body>
+</html>
