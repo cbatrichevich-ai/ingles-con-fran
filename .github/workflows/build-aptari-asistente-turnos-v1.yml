@@ -54,6 +54,10 @@ jobs:
           plugins { id 'com.android.application' version '8.7.3' apply false }
           EOF
 
+          cat > "$PRJ/gradle.properties" <<'EOF'
+          android.useAndroidX=true
+          EOF
+
           cat > "$PRJ/app/build.gradle" <<'EOF'
           plugins { id 'com.android.application' }
           android {
