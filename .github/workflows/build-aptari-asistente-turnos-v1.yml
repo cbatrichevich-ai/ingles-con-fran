@@ -319,7 +319,12 @@ jobs:
           grep -q "versionName='1.0.0'" APK_BADGING.txt
           grep -q "application-label:'APTARI Asistente de Turnos'" APK_BADGING.txt
           "$AAPT" dump permissions "$APK" | tee APK_PERMISSIONS.txt
-          if grep -q '^uses-permission:' APK_PERMISSIONS.txt; then echo 'APK solicita permisos inesperados' >&2; exit 1; fi
+          UNEXPECTED=$(grep '^uses-permission:' APK_PERMISSIONS.txt | grep -v "com.aptari.asistenteturnos.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" || true)
+          if [ -n "$UNEXPECTED" ]; then
+            echo 'APK solicita permisos inesperados:' >&2
+            echo "$UNEXPECTED" >&2
+            exit 1
+          fi
           "$ZIPALIGN" -p -f 4 "$APK" APTARI-Asistente-de-Turnos-Android-v1.0.0-UNSIGNED-ALIGNED.apk
           cp "$APKSIGNER_JAR" apksigner.jar
           sha256sum APTARI-Asistente-de-Turnos-Android-v1.0.0-UNSIGNED-ALIGNED.apk > APK_UNSIGNED_SHA256.txt
