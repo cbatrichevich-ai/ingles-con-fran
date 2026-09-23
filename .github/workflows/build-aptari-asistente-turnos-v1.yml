@@ -38,6 +38,13 @@ jobs:
           mkdir -p "$PRJ/app/src/main/res/drawable-nodpi"
           mkdir -p "$PRJ/app/src/main/res/xml"
           cat "$SRC/index.gz.part1" "$SRC/index.gz.part2" "$SRC/index.gz.part3" "$SRC/index.gz.part4" | base64 -d | gzip -d > "$PRJ/app/src/main/assets/index.html"
+          python - <<'PYFIX'
+          from pathlib import Path
+          p=Path("aptari-turnos-android/app/src/main/assets/index.html")
+          s=p.read_text(encoding="utf-8")
+          s=s.replace("function setTitle(t){$('#screenTitle').textContent=t;$('#businessLabel').textContent=(state.business||'Mi Agenda')+' · APTARI'}","function setTitle(t){$('#screenTitle').textContent=t;$('#businessLabel').textContent=(state.business||'Mi Agenda')}")
+          p.write_text(s,encoding="utf-8")
+          PYFIX
           cat "$SRC/logo.part1" "$SRC/logo.part2" "$SRC/logo.part3" "$SRC/logo.part4" | base64 -d > "$PRJ/app/src/main/assets/APTARI_logo_oficial_recortado.jpg"
 
           cat > "$PRJ/settings.gradle" <<'EOF'
