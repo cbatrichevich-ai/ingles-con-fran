@@ -37,7 +37,7 @@ jobs:
           mkdir -p "$PRJ/app/src/main/res/values"
           mkdir -p "$PRJ/app/src/main/res/drawable-nodpi"
           mkdir -p "$PRJ/app/src/main/res/xml"
-          cp "$SRC/index.html" "$PRJ/app/src/main/assets/index.html"
+          cat "$SRC/index.gz.part1" "$SRC/index.gz.part2" "$SRC/index.gz.part3" "$SRC/index.gz.part4" | base64 -d | gzip -d > "$PRJ/app/src/main/assets/index.html"
           cat "$SRC/logo.part1" "$SRC/logo.part2" "$SRC/logo.part3" "$SRC/logo.part4" | base64 -d > "$PRJ/app/src/main/assets/APTARI_logo_oficial_recortado.jpg"
 
           cat > "$PRJ/settings.gradle" <<'EOF'
@@ -282,7 +282,7 @@ jobs:
       - name: Control estático precompilación
         run: |
           set -euo pipefail
-          H=aptari-asistente-turnos-android-v1/index.html
+          H=aptari-turnos-android/app/src/main/assets/index.html
           grep -q 'APTARI · Asistente de Turnos' "$H"
           grep -q 'APTARI_logo_oficial_recortado.jpg' "$H"
           grep -q 'Android.shareImage' "$H"
@@ -290,7 +290,7 @@ jobs:
           grep -q 'ownerWhatsApp' "$H"
           grep -q "version:'1.0.0'" "$H"
           if grep -q '<div class="logo">A</div>' "$H"; then echo 'Logo provisorio detectado' >&2; exit 1; fi
-          if grep -qiE 'Nuevo turno manual|web-app|navegador donde se utiliza' "$H"; then echo 'Texto/flujo obsoleto detectado' >&2; exit 1; fi
+          if grep -qiE 'Nuevo turno manual|desinstalar la web-app|navegador donde se utiliza' "$H"; then echo 'Texto/flujo obsoleto detectado' >&2; exit 1; fi
           if grep -q '<uses-permission' aptari-turnos-android/app/src/main/AndroidManifest.xml; then echo 'No debe pedir permisos Android' >&2; exit 1; fi
 
       - name: Compilar release
