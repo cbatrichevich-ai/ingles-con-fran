@@ -1,0 +1,333 @@
+name: Compilar APTARI Asistente de Turnos Android V1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'aptari-asistente-turnos-android-v1/**'
+      - '.github/workflows/build-aptari-asistente-turnos-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Crear proyecto Android
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC=aptari-asistente-turnos-android-v1
+          PRJ=aptari-turnos-android
+          mkdir -p "$PRJ/app/src/main/java/com/aptari/asistenteturnos"
+          mkdir -p "$PRJ/app/src/main/assets"
+          mkdir -p "$PRJ/app/src/main/res/values"
+          mkdir -p "$PRJ/app/src/main/res/drawable-nodpi"
+          mkdir -p "$PRJ/app/src/main/res/xml"
+          cp "$SRC/index.html" "$PRJ/app/src/main/assets/index.html"
+          base64 -d "$SRC/logo.b64" > "$PRJ/app/src/main/assets/APTARI_logo_oficial_recortado.jpg"
+
+          cat > "$PRJ/settings.gradle" <<'EOF'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories { google(); mavenCentral() }
+          }
+          rootProject.name='AptariAsistenteTurnos'
+          include ':app'
+          EOF
+
+          cat > "$PRJ/build.gradle" <<'EOF'
+          plugins { id 'com.android.application' version '8.7.3' apply false }
+          EOF
+
+          cat > "$PRJ/app/build.gradle" <<'EOF'
+          plugins { id 'com.android.application' }
+          android {
+            namespace 'com.aptari.asistenteturnos'
+            compileSdk 35
+            defaultConfig {
+              applicationId 'com.aptari.asistenteturnos'
+              minSdk 24
+              targetSdk 35
+              versionCode 10000
+              versionName '1.0.0'
+            }
+            buildTypes {
+              release {
+                minifyEnabled false
+                shrinkResources false
+              }
+            }
+          }
+          EOF
+
+          cat > "$PRJ/app/src/main/res/values/strings.xml" <<'EOF'
+          <resources><string name="app_name">APTARI Asistente de Turnos</string></resources>
+          EOF
+
+          cat > /tmp/MakeIcon.java <<'EOF'
+          import java.awt.*;
+          import java.awt.image.BufferedImage;
+          import java.io.File;
+          import javax.imageio.ImageIO;
+          public class MakeIcon {
+            public static void main(String[] args) throws Exception {
+              BufferedImage src=ImageIO.read(new File(args[0]));
+              BufferedImage out=new BufferedImage(512,512,BufferedImage.TYPE_INT_RGB);
+              Graphics2D g=out.createGraphics();
+              g.setColor(Color.WHITE); g.fillRect(0,0,512,512);
+              g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+              double sc=Math.min(450.0/src.getWidth(),220.0/src.getHeight());
+              int w=(int)Math.round(src.getWidth()*sc), h=(int)Math.round(src.getHeight()*sc);
+              g.drawImage(src,(512-w)/2,(512-h)/2,w,h,null); g.dispose();
+              ImageIO.write(out,"png",new File(args[1]));
+            }
+          }
+          EOF
+          javac /tmp/MakeIcon.java
+          java -Djava.awt.headless=true -cp /tmp MakeIcon "$PRJ/app/src/main/assets/APTARI_logo_oficial_recortado.jpg" "$PRJ/app/src/main/res/drawable-nodpi/ic_launcher.png"
+
+          cat > "$PRJ/app/src/main/res/xml/file_paths.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <paths xmlns:android="http://schemas.android.com/apk/res/android">
+            <cache-path name="shared" path="shared/" />
+          </paths>
+          EOF
+
+          cat > "$PRJ/app/src/main/AndroidManifest.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <application
+              android:allowBackup="false"
+              android:usesCleartextTraffic="false"
+              android:label="@string/app_name"
+              android:icon="@drawable/ic_launcher"
+              android:roundIcon="@drawable/ic_launcher"
+              android:theme="@android:style/Theme.Material.Light.NoActionBar">
+              <provider
+                android:name="androidx.core.content.FileProvider"
+                android:authorities="${applicationId}.files"
+                android:exported="false"
+                android:grantUriPermissions="true">
+                <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+              </provider>
+              <activity
+                android:name=".MainActivity"
+                android:exported="true"
+                android:label="@string/app_name"
+                android:screenOrientation="portrait">
+                <intent-filter>
+                  <action android:name="android.intent.action.MAIN"/>
+                  <category android:name="android.intent.category.LAUNCHER"/>
+                </intent-filter>
+              </activity>
+            </application>
+          </manifest>
+          EOF
+
+          cat >> "$PRJ/app/build.gradle" <<'EOF'
+          dependencies { implementation 'androidx.core:core:1.15.0' }
+          EOF
+
+          cat > "$PRJ/app/src/main/java/com/aptari/asistenteturnos/MainActivity.java" <<'EOF'
+          package com.aptari.asistenteturnos;
+
+          import android.app.Activity;
+          import android.content.ActivityNotFoundException;
+          import android.content.Intent;
+          import android.net.Uri;
+          import android.os.Bundle;
+          import android.util.Base64;
+          import android.webkit.JavascriptInterface;
+          import android.webkit.ValueCallback;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import android.widget.Toast;
+          import androidx.core.content.FileProvider;
+          import java.io.File;
+          import java.io.FileOutputStream;
+          import java.io.OutputStream;
+          import java.nio.charset.StandardCharsets;
+
+          public class MainActivity extends Activity {
+            private static final int REQ_OPEN_JSON=1201;
+            private static final int REQ_SAVE_FILE=1202;
+            private WebView webView;
+            private ValueCallback<Uri[]> fileChooserCallback;
+            private byte[] pendingSaveBytes;
+
+            @Override protected void onCreate(Bundle savedInstanceState) {
+              super.onCreate(savedInstanceState);
+              webView = new WebView(this);
+              setContentView(webView);
+              WebSettings s=webView.getSettings();
+              s.setJavaScriptEnabled(true);
+              s.setDomStorageEnabled(true);
+              s.setAllowFileAccess(true);
+              s.setAllowContentAccess(false);
+              s.setAllowFileAccessFromFileURLs(false);
+              s.setAllowUniversalAccessFromFileURLs(false);
+              s.setGeolocationEnabled(false);
+              s.setMediaPlaybackRequiresUserGesture(true);
+              webView.addJavascriptInterface(new Bridge(),"Android");
+              webView.setWebViewClient(new WebViewClient(){
+                private boolean external(String url){
+                  if(url==null)return false;
+                  if(url.startsWith("https://wa.me/")||url.startsWith("whatsapp://")||url.startsWith("http://")||url.startsWith("https://")){
+                    openExternal(url); return true;
+                  }
+                  return false;
+                }
+                @Override public boolean shouldOverrideUrlLoading(WebView view,String url){return external(url);}
+                @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest req){return req!=null&&external(req.getUrl().toString());}
+              });
+              webView.setWebChromeClient(new WebChromeClient(){
+                @Override public boolean onShowFileChooser(WebView view,ValueCallback<Uri[]> callback,FileChooserParams params){
+                  if(fileChooserCallback!=null)fileChooserCallback.onReceiveValue(null);
+                  fileChooserCallback=callback;
+                  Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                  i.addCategory(Intent.CATEGORY_OPENABLE);
+                  i.setType("application/json");
+                  try{startActivityForResult(i,REQ_OPEN_JSON);}catch(Exception e){fileChooserCallback.onReceiveValue(null);fileChooserCallback=null;toast("No se pudo abrir el selector de archivos.");}
+                  return true;
+                }
+              });
+              webView.loadUrl("file:///android_asset/index.html");
+            }
+
+            private void toast(String text){runOnUiThread(()->Toast.makeText(this,text,Toast.LENGTH_SHORT).show());}
+            private void openExternal(String url){
+              runOnUiThread(()->{
+                try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(url)));}
+                catch(ActivityNotFoundException e){toast("No hay una aplicación disponible para abrir este enlace.");}
+              });
+            }
+            private byte[] decodeDataUrl(String dataUrl){
+              int comma=dataUrl.indexOf(',');
+              if(comma<0)throw new IllegalArgumentException("data URL inválida");
+              return Base64.decode(dataUrl.substring(comma+1),Base64.DEFAULT);
+            }
+            private void saveWithPicker(byte[] bytes,String mime,String name){
+              pendingSaveBytes=bytes;
+              runOnUiThread(()->{
+                Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE); i.setType(mime); i.putExtra(Intent.EXTRA_TITLE,name);
+                try{startActivityForResult(i,REQ_SAVE_FILE);}catch(Exception e){pendingSaveBytes=null;toast("No se pudo abrir el selector para guardar.");}
+              });
+            }
+
+            public class Bridge {
+              @JavascriptInterface public void openExternal(String url){MainActivity.this.openExternal(url);}
+              @JavascriptInterface public void saveImage(String dataUrl,String filename){
+                try{saveWithPicker(decodeDataUrl(dataUrl),"image/png",filename);}catch(Exception e){toast("No se pudo preparar la imagen.");}
+              }
+              @JavascriptInterface public void exportBackup(String json,String filename){
+                saveWithPicker(json.getBytes(StandardCharsets.UTF_8),"application/json",filename);
+              }
+              @JavascriptInterface public void shareImage(String dataUrl,String filename){
+                try{
+                  byte[] bytes=decodeDataUrl(dataUrl);
+                  File dir=new File(getCacheDir(),"shared"); if(!dir.exists())dir.mkdirs();
+                  File f=new File(dir,filename);
+                  try(FileOutputStream os=new FileOutputStream(f)){os.write(bytes);}
+                  Uri uri=FileProvider.getUriForFile(MainActivity.this,getPackageName()+".files",f);
+                  Intent send=new Intent(Intent.ACTION_SEND); send.setType("image/png"); send.putExtra(Intent.EXTRA_STREAM,uri); send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                  runOnUiThread(()->startActivity(Intent.createChooser(send,"Compartir disponibilidad")));
+                }catch(Exception e){toast("No se pudo compartir la imagen.");}
+              }
+            }
+
+            @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){
+              super.onActivityResult(requestCode,resultCode,data);
+              if(requestCode==REQ_OPEN_JSON){
+                if(fileChooserCallback!=null){
+                  Uri[] out=(resultCode==RESULT_OK&&data!=null&&data.getData()!=null)?new Uri[]{data.getData()}:null;
+                  fileChooserCallback.onReceiveValue(out); fileChooserCallback=null;
+                }
+              }else if(requestCode==REQ_SAVE_FILE){
+                if(resultCode==RESULT_OK&&data!=null&&data.getData()!=null&&pendingSaveBytes!=null){
+                  try(OutputStream os=getContentResolver().openOutputStream(data.getData())){if(os!=null)os.write(pendingSaveBytes);toast("Archivo guardado.");}
+                  catch(Exception e){toast("No se pudo guardar el archivo.");}
+                }
+                pendingSaveBytes=null;
+              }
+            }
+
+            private void exitApp(){super.onBackPressed();}
+            @Override public void onBackPressed(){
+              if(webView!=null){
+                webView.evaluateJavascript("(function(){var m=document.getElementById('modalBack');if(m&&m.classList.contains('show')){closeModal();return 'closed'}return 'exit'})()", value->{if("\"exit\"".equals(value))exitApp();});
+              }else exitApp();
+            }
+          }
+          EOF
+
+      - name: Control estático precompilación
+        run: |
+          set -euo pipefail
+          H=aptari-asistente-turnos-android-v1/index.html
+          grep -q 'APTARI · Asistente de Turnos' "$H"
+          grep -q 'APTARI_logo_oficial_recortado.jpg' "$H"
+          grep -q 'Android.shareImage' "$H"
+          grep -q 'Android.exportBackup' "$H"
+          grep -q 'ownerWhatsApp' "$H"
+          grep -q "version:'1.0.0'" "$H"
+          if grep -q '<div class="logo">A</div>' "$H"; then echo 'Logo provisorio detectado' >&2; exit 1; fi
+          if grep -qiE 'Nuevo turno manual|web-app|navegador donde se utiliza' "$H"; then echo 'Texto/flujo obsoleto detectado' >&2; exit 1; fi
+          if grep -q '<uses-permission' aptari-turnos-android/app/src/main/AndroidManifest.xml; then echo 'No debe pedir permisos Android' >&2; exit 1; fi
+
+      - name: Compilar release
+        working-directory: aptari-turnos-android
+        run: gradle :app:assembleRelease --no-daemon
+
+      - name: Verificar APK y alinear
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=aptari-turnos-android/app/build/outputs/apk/release/app-release-unsigned.apk
+          test -s "$APK"
+          unzip -p "$APK" assets/index.html > /tmp/index-apk.html
+          grep -q 'APTARI · Asistente de Turnos' /tmp/index-apk.html
+          grep -q 'Android.shareImage' /tmp/index-apk.html
+          unzip -l "$APK" | grep -q 'assets/APTARI_logo_oficial_recortado.jpg'
+          AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)
+          ZIPALIGN=$(find "$ANDROID_HOME/build-tools" -type f -name zipalign | sort -V | tail -1)
+          APKSIGNER_JAR=$(find "$ANDROID_HOME/build-tools" -type f -path '*/lib/apksigner.jar' | sort -V | tail -1)
+          "$AAPT" dump badging "$APK" | tee APK_BADGING.txt
+          grep -q "package: name='com.aptari.asistenteturnos'" APK_BADGING.txt
+          grep -q "versionName='1.0.0'" APK_BADGING.txt
+          grep -q "application-label:'APTARI Asistente de Turnos'" APK_BADGING.txt
+          "$AAPT" dump permissions "$APK" | tee APK_PERMISSIONS.txt
+          if grep -q '^uses-permission:' APK_PERMISSIONS.txt; then echo 'APK solicita permisos inesperados' >&2; exit 1; fi
+          "$ZIPALIGN" -p -f 4 "$APK" APTARI-Asistente-de-Turnos-Android-v1.0.0-UNSIGNED-ALIGNED.apk
+          cp "$APKSIGNER_JAR" apksigner.jar
+          sha256sum APTARI-Asistente-de-Turnos-Android-v1.0.0-UNSIGNED-ALIGNED.apk > APK_UNSIGNED_SHA256.txt
+
+      - name: Subir candidato de firma
+        uses: actions/upload-artifact@v4
+        with:
+          name: APTARI-Asistente-de-Turnos-v1-para-firma
+          path: |
+            APTARI-Asistente-de-Turnos-Android-v1.0.0-UNSIGNED-ALIGNED.apk
+            apksigner.jar
+            APK_UNSIGNED_SHA256.txt
+            APK_BADGING.txt
+            APK_PERMISSIONS.txt
+          if-no-files-found: error
