@@ -38,7 +38,7 @@ jobs:
           mkdir -p "$PRJ/app/src/main/res/drawable-nodpi"
           mkdir -p "$PRJ/app/src/main/res/xml"
           cp "$SRC/index.html" "$PRJ/app/src/main/assets/index.html"
-          base64 -d "$SRC/logo.b64" > "$PRJ/app/src/main/assets/APTARI_logo_oficial_recortado.jpg"
+          cat "$SRC/logo.part1" "$SRC/logo.part2" "$SRC/logo.part3" "$SRC/logo.part4" | base64 -d > "$PRJ/app/src/main/assets/APTARI_logo_oficial_recortado.jpg"
 
           cat > "$PRJ/settings.gradle" <<'EOF'
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
