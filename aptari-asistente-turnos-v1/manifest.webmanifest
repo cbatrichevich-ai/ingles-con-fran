@@ -1,0 +1,16 @@
+{
+  "name": "APTARI · Asistente de Turnos",
+  "short_name": "APTARI Turnos",
+  "description": "Agenda simple de turnos, disponibilidad y comunicación por WhatsApp.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7f7",
+  "theme_color": "#5f9f98",
+  "lang": "es-AR",
+  "orientation": "portrait-primary",
+  "icons": [
+    {"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
