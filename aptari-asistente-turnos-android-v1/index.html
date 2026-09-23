@@ -1,1 +1,215 @@
-The requested file reference is not currently visible. Use files.search or files.list to rediscover the file, then retry with a returned ref_id or file_id.
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#5f9f98" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="APTARI Turnos" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+<title>APTARI · Asistente de Turnos</title>
+<style>
+:root{
+  --bg:#f5f7f7;--card:#ffffff;--ink:#1f2b2b;--muted:#6c7a7a;--line:#dce5e5;
+  --accent:#5f9f98;--accent-dark:#38776f;--accent-soft:#dff1ee;--warn:#f5e3b8;
+  --danger:#d46b6b;--blocked:#d7dadd;--shadow:0 12px 30px rgba(43,70,67,.10);
+  --radius:20px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#edf3f2 0,#f8faf9 32%,#f4f6f6 100%);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{max-width:480px;margin:0 auto;min-height:100dvh;background:var(--bg);position:relative;box-shadow:0 0 0 1px rgba(0,0,0,.02)}
+.topbar{position:sticky;top:0;z-index:20;padding:max(18px,env(safe-area-inset-top)) 18px 12px;background:rgba(245,247,247,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand h1{font-size:22px;line-height:1.05;margin:0;letter-spacing:-.02em}.brand small{display:block;color:var(--muted);font-size:12px;margin-top:5px;font-weight:600}
+.brand-logo{width:96px;height:40px;object-fit:contain;object-position:right center;display:block}.setup-logo{width:150px;height:auto;display:block;margin:0 0 10px}
+.content{padding:18px 16px 94px}
+.section-title{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800;margin:4px 2px 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+.hero{background:linear-gradient(135deg,#fff 0,#eef9f7 100%);border:1px solid #cfe7e3}
+.hero .time{font-size:30px;font-weight:900;letter-spacing:-.04em}.hero .name{font-size:20px;font-weight:800;margin-top:4px}.hero .task{color:var(--muted);margin-top:2px}
+.row{display:flex;gap:10px;align-items:center}.between{justify-content:space-between}.wrap{flex-wrap:wrap}.grow{flex:1}
+.btn{border:none;border-radius:14px;padding:11px 14px;font-weight:800}.btn.primary{background:var(--accent);color:#fff}.btn.secondary{background:var(--accent-soft);color:var(--accent-dark)}.btn.ghost{background:#f0f3f3;color:var(--ink)}.btn.danger{background:#faeaea;color:#9c4040}.btn.block{width:100%}.btn.small{padding:8px 10px;border-radius:11px;font-size:13px}
+.list-item{display:grid;grid-template-columns:58px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.list-item:last-child{border-bottom:0}.list-time{font-weight:900}.list-name{font-weight:800}.list-task{font-size:13px;color:var(--muted);margin-top:2px}.pill{font-size:11px;font-weight:900;padding:6px 8px;border-radius:999px;background:#eff3f3;color:#566}.pill.late{background:#fde7e7;color:#a44}.pill.free{background:#e7f5ee;color:#2b7a56}.pill.blocked{background:#eceeef;color:#666}
+.empty{text-align:center;color:var(--muted);padding:24px 10px}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(480px,100%);display:grid;grid-template-columns:repeat(4,1fr);background:#fff;border-top:1px solid var(--line);z-index:30;padding:8px 5px max(8px,env(safe-area-inset-bottom));box-shadow:0 -8px 28px rgba(40,60,60,.08)}
+.nav button{border:none;background:none;padding:8px 4px;color:var(--muted);font-size:11px;font-weight:800}.nav button span{display:block;font-size:20px;margin-bottom:3px}.nav button.active{color:var(--accent-dark)}
+.grid-wrap{overflow:auto;padding-bottom:3px}.week-grid{display:grid;grid-template-columns:66px repeat(7,minmax(92px,1fr));min-width:714px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff}.cell{min-height:58px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px;font-size:12px}.cell:nth-child(8n){border-right:0}.head{min-height:auto;background:#eef4f3;font-weight:900;text-align:center}.time-cell{background:#fafbfb;font-weight:900;color:#596}.slot{cursor:pointer;transition:.15s}.slot:hover{outline:2px solid #b8ded8;outline-offset:-2px}.slot.free{background:#f7fcfa;color:#2b7a56;font-weight:800}.slot.busy{background:#fff}.slot.blocked{background:#f0f1f2;color:#777}.slot.late{background:#fff5f5}.slot strong{display:block;font-size:12px;margin-bottom:2px}.slot small{display:block;color:var(--muted);line-height:1.2}
+.field{margin-bottom:13px}.field label{display:block;font-size:12px;font-weight:900;color:#667;margin:0 0 6px}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:13px;background:#fff;padding:11px 12px;color:var(--ink);outline:none}.field input:focus,.field select:focus,.field textarea:focus{border-color:#94c9c1;box-shadow:0 0 0 3px #dff1ee}.field textarea{min-height:72px;resize:vertical}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.day-row{display:grid;grid-template-columns:72px minmax(0,1fr) minmax(0,1fr) 26px;gap:6px;align-items:center;margin-bottom:9px}.day-row strong{font-size:13px}.day-row input{width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px 6px;font-size:14px}.day-row .switch{accent-color:var(--accent);width:18px;height:18px;padding:0;justify-self:center}
+.tag-list{display:flex;gap:8px;flex-wrap:wrap}.tag{display:inline-flex;gap:7px;align-items:center;background:#eef5f4;border-radius:999px;padding:7px 10px;font-weight:800;font-size:13px}.tag button{border:none;background:none;color:#899;font-weight:900;padding:0}
+.modal-back{position:fixed;inset:0;background:rgba(20,30,30,.48);display:none;align-items:flex-end;justify-content:center;z-index:100}.modal-back.show{display:flex}.modal{width:min(480px,100%);max-height:90dvh;overflow:auto;background:#fff;border-radius:24px 24px 0 0;padding:18px 16px 24px;box-shadow:0 -20px 60px rgba(0,0,0,.25)}.modal h3{margin:0 0 4px;font-size:20px}.modal .sub{color:var(--muted);margin-bottom:16px;font-size:13px}
+.setup{position:fixed;inset:0;background:linear-gradient(180deg,#edf5f3,#fff);z-index:200;overflow:auto;display:none}.setup.show{display:block}.setup-inner{max-width:480px;margin:0 auto;padding:24px 18px 40px}.setup h2{font-size:28px;margin:8px 0}.setup p{color:var(--muted);line-height:1.45}.step{display:none}.step.active{display:block}.progress{height:7px;background:#e2e8e7;border-radius:99px;overflow:hidden;margin:18px 0}.progress i{display:block;height:100%;background:var(--accent);width:25%;transition:.2s}
+.share-preview{aspect-ratio:9/16;max-height:540px;margin:0 auto;background:linear-gradient(160deg,#6ca9a0,#417f77);color:#fff;border-radius:22px;padding:28px 24px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow)}.share-preview h2{font-size:30px;margin:0 0 8px}.share-preview .brandline{font-weight:900;letter-spacing:.08em;font-size:13px;opacity:.92}.share-days{display:grid;gap:16px}.share-day strong{font-size:17px}.share-times{margin-top:5px;font-size:18px;font-weight:800;line-height:1.5}.share-foot{font-size:14px;font-weight:800;opacity:.95}.channel-row{display:flex;gap:8px;flex-wrap:wrap}.channel-row label{border:1px solid var(--line);background:#fff;padding:9px 12px;border-radius:12px;font-size:13px;font-weight:800}.channel-row input{margin-right:6px;accent-color:var(--accent)}
+.notice{background:#fff7de;border:1px solid #f0dfaa;border-radius:14px;padding:11px 12px;font-size:13px;color:#715d24;margin-bottom:12px}
+.small-muted{font-size:12px;color:var(--muted)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div><h1 id="screenTitle">Próximos</h1><small id="businessLabel">APTARI · Asistente de Turnos</small></div>
+      <img class="brand-logo" src="APTARI_logo_oficial_recortado.jpg" alt="APTARI">
+    </div>
+  </header>
+  <main class="content" id="content"></main>
+  <nav class="nav">
+    <button data-screen="upcoming" class="active"><span>◉</span>Próximos</button>
+    <button data-screen="week"><span>▦</span>Semana</button>
+    <button data-screen="share"><span>↗</span>Compartir</button>
+    <button data-screen="settings"><span>⚙</span>Config.</button>
+  </nav>
+</div>
+
+<div class="modal-back" id="modalBack"><div class="modal" id="modal"></div></div>
+
+<div class="setup" id="setup">
+ <div class="setup-inner">
+   <img class="setup-logo" src="APTARI_logo_oficial_recortado.jpg" alt="APTARI">
+   <h2>Armemos tu agenda</h2>
+   <p>Cuatro pasos rápidos. Después podés cambiar todo desde Configuración.</p>
+   <div class="progress"><i id="progressBar"></i></div>
+   <div id="setupSteps"></div>
+ </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const DAYS=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const fullDays=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const pad=n=>String(n).padStart(2,'0');
+function isoDate(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function fmtDate(s){const d=new Date(s+'T12:00:00'); return `${fullDays[(d.getDay()+6)%7]} ${d.getDate()}`}
+function addMin(time,min){let [h,m]=time.split(':').map(Number);let t=h*60+m+min;return pad(Math.floor(t/60))+':'+pad(t%60)}
+function minutes(t){let [h,m]=t.split(':').map(Number);return h*60+m}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+const defaultState={
+  version:'1.0.0',
+  setupDone:false,
+  business:'Mi Agenda',
+  interval:45,
+  useWhatsApp:true,
+  ownerWhatsApp:'',
+  waTemplate:'Hola {cliente}. Tu turno quedó reservado para el {fecha} a las {hora}{tarea}.',
+  initialView:'upcoming',
+  tasks:[],
+  schedule:{
+    0:{on:true,start:'15:00',end:'18:00'},1:{on:true,start:'15:00',end:'18:00'},2:{on:true,start:'15:00',end:'20:00'},3:{on:false,start:'15:00',end:'18:00'},4:{on:true,start:'10:00',end:'18:00'},5:{on:false,start:'10:00',end:'14:00'},6:{on:false,start:'10:00',end:'14:00'}
+  },
+  appointments:[], blocks:[]
+};
+function load(){try{return Object.assign({},defaultState,JSON.parse(localStorage.getItem('aptariTurnosV1')||'{}'))}catch(e){return JSON.parse(JSON.stringify(defaultState))}}
+let state=load(); let screen='upcoming';
+function save(){localStorage.setItem('aptariTurnosV1',JSON.stringify(state))}
+function mondayOf(d=new Date()){const x=new Date(d);const day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);x.setHours(12,0,0,0);return x}
+let weekStart=mondayOf();
+function seedDemo(){ if(state.appointments.length) return; const m=mondayOf(); const today=new Date(); const candidates=[]; for(let i=0;i<5;i++){const d=new Date(m);d.setDate(m.getDate()+i);candidates.push(isoDate(d))}
+ const ti=isoDate(today); const use=candidates.includes(ti)?ti:candidates[2];
+ state.appointments.push({id:uid(),date:use,time:'15:00',client:'Carlitos',task:'Corte',phone:'',note:'',status:'pending'});
+ state.appointments.push({id:uid(),date:use,time:'16:30',client:'Patricia',task:'Tintura',phone:'',note:'',status:'pending'});
+ save(); }
+
+function slotsForDate(dateStr){const d=new Date(dateStr+'T12:00:00'),idx=(d.getDay()+6)%7,c=state.schedule[idx];if(!c||!c.on)return[];let out=[],t=c.start;while(minutes(t)+Number(state.interval)<=minutes(c.end)){out.push(t);t=addMin(t,Number(state.interval));}return out}
+function appointmentAt(date,time){return state.appointments.find(a=>a.date===date&&a.time===time&&a.status==='pending')}
+function blockAt(date,time){return state.blocks.find(b=>b.date===date&&b.time===time)}
+function isPast(a){return new Date(`${a.date}T${a.time}:00`)<new Date()&&a.status==='pending'}
+
+function setTitle(t){$('#screenTitle').textContent=t;$('#businessLabel').textContent=(state.business||'Mi Agenda')}
+function setScreen(s){screen=s;$$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.screen===s));render()}
+$$('.nav button').forEach(b=>b.onclick=()=>setScreen(b.dataset.screen));
+
+function render(){ if(screen==='upcoming')renderUpcoming(); if(screen==='week')renderWeek(); if(screen==='share')renderShare(); if(screen==='settings')renderSettings(); }
+
+function renderUpcoming(){setTitle('Próximos'); const today=isoDate(new Date()); const future=state.appointments.filter(a=>a.status==='pending').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)); const late=future.filter(isPast); const upcoming=future.filter(a=>!isPast(a)); const next=upcoming[0];
+ let h=''; if(late.length)h+=`<div class="notice"><strong>${late.length} turno${late.length>1?'s':''} pendiente${late.length>1?'s':''} de cerrar.</strong> Revisalos antes de seguir.</div>`;
+ if(next) h+=`<div class="section-title">Próximo turno</div><div class="card hero"><div class="time">${next.time}</div><div class="name">${esc(next.client)}</div><div class="task">${esc(next.task||'Sin tarea')}</div><div class="row wrap" style="margin-top:14px">${state.useWhatsApp?`<button class="btn secondary" onclick="openWhatsApp('${next.id}')">WhatsApp</button>`:''}<button class="btn primary" onclick="finishAppt('${next.id}')">Realizado</button><button class="btn ghost" onclick="openAppt('${next.id}')">Ver</button></div></div>`; else h+=`<div class="card empty">No hay próximos turnos cargados.</div>`;
+ const todayList=future.filter(a=>a.date===today); h+=`<div class="section-title">Hoy</div><div class="card">`;
+ h+=todayList.length?todayList.map(a=>itemHtml(a)).join(''):`<div class="empty">No hay turnos para hoy.</div>`; h+=`</div>`;
+ const later=upcoming.filter(a=>a.date!==today).slice(0,8); h+=`<div class="section-title">Después</div><div class="card">${later.length?later.map(a=>itemHtml(a,true)).join(''):`<div class="empty">No hay más turnos próximos.</div>`}</div>`;
+ $('#content').innerHTML=h;
+}
+function itemHtml(a,showDate=false){return `<div class="list-item" onclick="openAppt('${a.id}')"><div class="list-time">${a.time}</div><div><div class="list-name">${esc(a.client)}</div><div class="list-task">${showDate?fmtDate(a.date)+' · ':''}${esc(a.task||'Sin tarea')}</div></div><span class="pill ${isPast(a)?'late':''}">${isPast(a)?'Revisar':'Pendiente'}</span></div>`}
+
+function renderWeek(){setTitle('Semana');const dates=[0,1,2,3,4,5,6].map(i=>{const d=new Date(weekStart);d.setDate(d.getDate()+i);return d}); const dateSet=new Set(dates.map(isoDate));let allTimes=new Set();dates.forEach(d=>slotsForDate(isoDate(d)).forEach(t=>allTimes.add(t)));state.appointments.filter(a=>a.status==='pending'&&dateSet.has(a.date)).forEach(a=>allTimes.add(a.time));state.blocks.filter(b=>dateSet.has(b.date)).forEach(b=>allTimes.add(b.time));allTimes=[...allTimes].sort((a,b)=>minutes(a)-minutes(b));
+ let h=`<div class="row between" style="margin-bottom:12px"><button class="btn ghost small" onclick="moveWeek(-7)">← Anterior</button><button class="btn secondary small" onclick="goThisWeek()">Esta semana</button><button class="btn ghost small" onclick="moveWeek(7)">Siguiente →</button></div><div class="small-muted" style="margin:0 2px 10px">Tocá un hueco para asignar un turno o bloquearlo. Deslizá horizontalmente para ver los días.</div><div class="grid-wrap"><div class="week-grid"><div class="cell head">Hora</div>`;
+ dates.forEach(d=>h+=`<div class="cell head">${DAYS[(d.getDay()+6)%7]}<br>${d.getDate()}</div>`);
+ for(const t of allTimes){h+=`<div class="cell time-cell">${t}</div>`; for(const d of dates){const ds=isoDate(d),valid=slotsForDate(ds).includes(t),a=appointmentAt(ds,t),b=blockAt(ds,t); if(a){h+=`<div class="cell slot busy ${isPast(a)?'late':''}" onclick="openAppt('${a.id}')"><strong>${esc(a.client)}</strong><small>${esc(a.task||'')}</small></div>`} else if(b){h+=`<div class="cell slot blocked" onclick="openSlot('${ds}','${t}')"><strong>Bloqueado</strong><small>No publicar</small></div>`} else if(valid){h+=`<div class="cell slot free" onclick="openSlot('${ds}','${t}')"><strong>LIBRE</strong><small>Asignar</small></div>`} else h+=`<div class="cell"></div>`;} }
+ h+=`</div></div>`; $('#content').innerHTML=h;
+}
+function moveWeek(n){weekStart.setDate(weekStart.getDate()+n);renderWeek()} function goThisWeek(){weekStart=mondayOf();renderWeek()}
+
+function renderShare(){setTitle('Compartir disponibilidad');const dates=[0,1,2,3,4,5,6].map(i=>{const d=new Date(weekStart);d.setDate(d.getDate()+i);return d}); const valid=dates.filter(d=>freeTimes(isoDate(d)).length); let selected=valid.slice(0,4).map(isoDate);
+ $('#content').innerHTML=`<div class="card"><div class="field"><label>Días a publicar</label><div id="shareDays" class="channel-row"></div></div><div class="field"><label>Texto final</label><select id="ctaMode"><option value="none">Sin llamada a reservar</option><option value="wa">Reservas por WhatsApp</option><option value="custom">Texto personalizado</option></select></div><div class="field hidden" id="customCtaWrap"><label>Texto personalizado</label><input id="customCta" placeholder="Ej. Consultame por privado" /></div></div><div id="previewWrap"></div><div class="row wrap" style="margin-top:14px"><button class="btn primary grow" onclick="downloadAvailability()">Generar imagen</button><button class="btn secondary grow" onclick="shareAvailability()">Compartir</button></div><div class="small-muted" style="margin-top:10px">La placa incluye sólo huecos libres. Nunca muestra nombres ni datos de clientes.</div>`;
+ const dwrap=$('#shareDays'); dates.forEach(d=>{const ds=isoDate(d),n=freeTimes(ds).length;if(!n)return;const lab=document.createElement('label');lab.innerHTML=`<input type="checkbox" value="${ds}" ${selected.includes(ds)?'checked':''}>${DAYS[(d.getDay()+6)%7]} ${d.getDate()} (${n})`;dwrap.appendChild(lab)}); dwrap.onchange=renderSharePreview; $('#ctaMode').onchange=()=>{$('#customCtaWrap').classList.toggle('hidden',$('#ctaMode').value!=='custom');renderSharePreview()}; setTimeout(renderSharePreview,0);
+}
+function selectedShareDates(){return [...document.querySelectorAll('#shareDays input:checked')].map(x=>x.value)}
+function freeTimes(ds){const now=new Date();return slotsForDate(ds).filter(t=>!appointmentAt(ds,t)&&!blockAt(ds,t)&&new Date(`${ds}T${t}:00`)>=now)}
+function ctaText(){const m=$('#ctaMode'),mode=m?m.value:'none';if(mode==='wa'){if(!state.useWhatsApp)return'';return state.ownerWhatsApp?'Reservas por WhatsApp: '+state.ownerWhatsApp:'Reservas por WhatsApp'}if(mode==='custom'){const c=$('#customCta');return c?c.value:''}return''}
+function renderSharePreview(){const dates=selectedShareDates();let dayHtml=dates.map(ds=>`<div class="share-day"><strong>${fmtDate(ds).toUpperCase()}</strong><div class="share-times">${freeTimes(ds).join(' · ')||'Sin disponibilidad'}</div></div>`).join('');$('#previewWrap').innerHTML=`<div class="share-preview" id="sharePreview"><div><div class="brandline">${esc((state.business||'MI AGENDA').toUpperCase())}</div><h2>Turnos disponibles</h2></div><div class="share-days">${dayHtml||'<div>Elegí al menos un día.</div>'}</div><div class="share-foot">${esc(ctaText())}</div></div>`}
+function drawAvailability(){const cvs=document.createElement('canvas');cvs.width=1080;cvs.height=1920;const x=cvs.getContext('2d'); const grad=x.createLinearGradient(0,0,1080,1920);grad.addColorStop(0,'#6ca9a0');grad.addColorStop(1,'#417f77');x.fillStyle=grad;x.fillRect(0,0,cvs.width,cvs.height);x.fillStyle='#fff';x.font='700 34px Arial';x.fillText((state.business||'MI AGENDA').toUpperCase(),90,130);x.font='800 72px Arial';x.fillText('Turnos disponibles',90,235);let y=430;const dates=selectedShareDates();for(const ds of dates){x.font='700 42px Arial';x.fillText(fmtDate(ds).toUpperCase(),90,y);y+=62;x.font='700 48px Arial';const times=freeTimes(ds);x.fillText(times.join('  ·  ')||'Sin disponibilidad',90,y);y+=150;}const foot=ctaText();if(foot){x.font='700 34px Arial';x.fillText(foot,90,1780)}x.font='700 26px Arial';x.globalAlpha=.8;x.fillText('APTARI',90,1840);x.globalAlpha=1;return cvs}
+function downloadAvailability(){const data=drawAvailability().toDataURL('image/png');if(window.Android&&Android.saveImage){Android.saveImage(data,'turnos-disponibles.png');return}const a=document.createElement('a');a.download='turnos-disponibles.png';a.href=data;a.click()}
+async function shareAvailability(){const cvs=drawAvailability(),data=cvs.toDataURL('image/png');if(window.Android&&Android.shareImage){Android.shareImage(data,'turnos-disponibles.png');return}const blob=await new Promise(r=>cvs.toBlob(r,'image/png'));const file=new File([blob],'turnos-disponibles.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Turnos disponibles'})}else{downloadAvailability();alert('En este dispositivo se guardó la imagen para que puedas compartirla.')}}
+
+function renderSettings(){setTitle('Configuración'); let dayRows=''; for(let i=0;i<7;i++){const c=state.schedule[i];dayRows+=`<div class="day-row"><strong>${fullDays[i]}</strong><input type="time" id="s${i}" value="${c.start}" ${c.on?'':'disabled'}><input type="time" id="e${i}" value="${c.end}" ${c.on?'':'disabled'}><input class="switch" type="checkbox" id="on${i}" ${c.on?'checked':''} onchange="toggleDay(${i})"></div>`}
+ $('#content').innerHTML=`<div class="card"><div class="section-title">Tu agenda</div><div class="field"><label>Nombre del negocio o profesional</label><input id="business" value="${escAttr(state.business)}"></div>${dayRows}<button class="btn secondary small" onclick="copyMonday()">Copiar lunes a días activos</button></div><div class="card"><div class="field"><label>Ofrecer turnos cada</label><select id="interval" onchange="toggleCustomInterval()"><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">60 min</option><option value="90">90 min</option><option value="120">120 min</option><option value="custom">Personalizado…</option></select></div><div class="field hidden" id="customIntervalWrap"><label>Minutos por turno</label><input id="customInterval" type="number" min="5" max="480" step="5" value="${state.interval}"></div><div class="small-muted">La app genera sólo horarios que terminan antes o exactamente al cierre.</div></div><div class="card"><div class="section-title">Mis tareas (opcionales)</div><div class="tag-list" id="tags">${state.tasks.map((t,i)=>`<span class="tag">${esc(t)}<button onclick="removeTask(${i})">×</button></span>`).join('')}</div><div class="row" style="margin-top:12px"><input id="newTask" class="grow" placeholder="Agregar tarea" style="border:1px solid var(--line);border-radius:12px;padding:10px"><button class="btn secondary" onclick="addTask()">Agregar</button></div></div><div class="card"><div class="field"><label><input type="checkbox" id="useWA" ${state.useWhatsApp?'checked':''}> Uso WhatsApp para mis turnos</label></div><div class="field"><label>Mi WhatsApp para reservas (opcional)</label><input id="ownerWA" inputmode="tel" value="${escAttr(state.ownerWhatsApp||'')}" placeholder="Ej. +54 9 11 1234 5678"></div><div class="field"><label>Texto de confirmación</label><textarea id="waTemplate">${esc(state.waTemplate||defaultState.waTemplate)}</textarea><div class="small-muted">Variables: {cliente}, {fecha}, {hora}, {tarea}</div></div><div class="field"><label>Vista al abrir</label><select id="initialView"><option value="upcoming">Próximos</option><option value="week">Semana</option></select></div></div><div class="card"><div class="section-title">Ayuda y condiciones</div><button class="btn ghost block" onclick="showHowTo()">Cómo usar la app</button><button class="btn ghost block" style="margin-top:8px" onclick="showDisclaimer()">Información y disclaimer</button><div class="small-muted" style="margin-top:10px">APTARI Asistente de Turnos · V1.0</div></div><button class="btn primary block" onclick="saveSettings()">Guardar configuración</button><button class="btn ghost block" style="margin-top:10px" onclick="exportBackup()">Exportar copia de seguridad</button><label class="btn ghost block" style="margin-top:10px;text-align:center;display:block">Restaurar copia<input type="file" accept="application/json" onchange="importBackup(event)" class="hidden"></label>`;
+ if([15,20,30,45,60,90,120].includes(Number(state.interval))){$('#interval').value=String(state.interval)}else{$('#interval').value='custom';$('#customIntervalWrap').classList.remove('hidden');$('#customInterval').value=state.interval}$('#initialView').value=state.initialView;
+}
+function toggleCustomInterval(){const i=$('#interval'),w=$('#customIntervalWrap');const custom=i&&i.value==='custom';if(w)w.classList.toggle('hidden',!custom)}
+function selectedInterval(){return $('#interval').value==='custom'?Number($('#customInterval').value):Number($('#interval').value)}
+function toggleDay(i){const on=$(`#on${i}`).checked;$(`#s${i}`).disabled=!on;$(`#e${i}`).disabled=!on}
+function copyMonday(){for(let i=1;i<7;i++)if($(`#on${i}`).checked){$(`#s${i}`).value=$('#s0').value;$(`#e${i}`).value=$('#e0').value}}
+function addTask(){const v=$('#newTask').value.trim();if(v&&!state.tasks.includes(v)){state.tasks.push(v);save();renderSettings()}}
+function removeTask(i){state.tasks.splice(i,1);save();renderSettings()}
+function saveSettings(){const iv=selectedInterval();if(!Number.isFinite(iv)||iv<5||iv>480)return alert('Elegí un intervalo entre 5 y 480 minutos.');for(let i=0;i<7;i++){if($(`#on${i}`).checked&&minutes($(`#s${i}`).value)>=minutes($(`#e${i}`).value))return alert('Revisá '+fullDays[i]+': la hora de cierre debe ser posterior al inicio.')}state.business=$('#business').value.trim()||'Mi Agenda';state.interval=iv;state.useWhatsApp=$('#useWA').checked;state.ownerWhatsApp=$('#ownerWA').value.trim();state.waTemplate=$('#waTemplate').value.trim()||defaultState.waTemplate;state.initialView=$('#initialView').value;for(let i=0;i<7;i++){state.schedule[i]={on:$(`#on${i}`).checked,start:$(`#s${i}`).value,end:$(`#e${i}`).value}}save();alert('Configuración guardada. Los turnos ya existentes se conservaron.');renderSettings()}
+
+function openSlot(date,time){const b=blockAt(date,time); if(b){showModal(`<h3>${fmtDate(date)} · ${time}</h3><div class="sub">Este horario está bloqueado.</div><button class="btn primary block" onclick="unblock('${b.id}')">Desbloquear horario</button><button class="btn ghost block" style="margin-top:10px" onclick="closeModal()">Cerrar</button>`);return}
+ showModal(`<h3>${fmtDate(date)} · ${time}</h3><div class="sub">Horario libre</div><button class="btn primary block" onclick="openNew('${date}','${time}')">Asignar turno</button><button class="btn ghost block" style="margin-top:10px" onclick="blockSlot('${date}','${time}')">Bloquear horario</button>`)}
+function openNew(date,time){showModal(`<h3>Nuevo turno</h3><div class="sub">Horario seleccionado: ${fmtDate(date)} · ${time}</div><div class="field"><label>Cliente</label><input id="aClient" placeholder="Nombre"></div><div class="field"><label>Tarea (opcional)</label><select id="aTask"><option value="">Sin tarea</option>${state.tasks.map(t=>`<option>${esc(t)}</option>`).join('')}</select></div><div class="field"><label>WhatsApp / teléfono del cliente (opcional)</label><input id="aPhone" inputmode="tel"></div><div class="field"><label>Nota (opcional)</label><textarea id="aNote"></textarea></div><button class="btn primary block" onclick="saveNew('${date}','${time}')">Guardar turno</button>`)}
+function saveNew(date,time){const d=date,t=time,c=$('#aClient').value.trim();if(!c)return alert('Ingresá el nombre del cliente.');if(appointmentAt(d,t))return alert('Ese horario ya tiene un turno. Elegí otro.');if(blockAt(d,t))return alert('Ese horario está bloqueado. Desbloquealo antes de asignar un turno.');state.appointments.push({id:uid(),date:d,time:t,client:c,task:$('#aTask').value,phone:$('#aPhone').value.trim(),note:$('#aNote').value.trim(),status:'pending'});save();closeModal();render();}
+function blockSlot(date,time){if(appointmentAt(date,time))return alert('No podés bloquear un horario que ya tiene un turno.');if(!blockAt(date,time))state.blocks.push({id:uid(),date,time});save();closeModal();renderWeek()}
+function unblock(id){state.blocks=state.blocks.filter(b=>b.id!==id);save();closeModal();renderWeek()}
+function openAppt(id){const a=state.appointments.find(x=>x.id===id);if(!a)return;showModal(`<h3>${esc(a.client)}</h3><div class="sub">${fmtDate(a.date)} · ${a.time}${a.task?' · '+esc(a.task):''}</div>${a.note?`<div class="card" style="box-shadow:none">${esc(a.note)}</div>`:''}<div class="row wrap">${state.useWhatsApp?`<button class="btn secondary" onclick="openWhatsApp('${a.id}')">WhatsApp</button>`:''}<button class="btn primary" onclick="finishAppt('${a.id}')">Realizado</button><button class="btn ghost" onclick="editAppt('${a.id}')">Editar</button><button class="btn ghost" onclick="startReschedule('${a.id}')">Reprogramar</button><button class="btn danger" onclick="cancelAppt('${a.id}')">Cancelar</button></div>`)}
+function finishAppt(id){const a=state.appointments.find(x=>x.id===id);if(a)a.status='done';save();closeModal();render()}
+function cancelAppt(id){const a=state.appointments.find(x=>x.id===id);if(a)a.status='cancelled';save();closeModal();render()}
+function editAppt(id){const a=state.appointments.find(x=>x.id===id);showModal(`<h3>Editar turno</h3><div class="sub">${fmtDate(a.date)} · ${a.time}</div><div class="field"><label>Cliente</label><input id="eClient" value="${escAttr(a.client)}"></div><div class="field"><label>Tarea</label><select id="eTask"><option value="">Sin tarea</option>${state.tasks.map(t=>`<option ${a.task===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div><div class="field"><label>Teléfono</label><input id="ePhone" value="${escAttr(a.phone||'')}"></div><div class="field"><label>Nota</label><textarea id="eNote">${esc(a.note||'')}</textarea></div><button class="btn primary block" onclick="saveEdit('${id}')">Guardar cambios</button>`) }
+function saveEdit(id){const a=state.appointments.find(x=>x.id===id),c=$('#eClient').value.trim();if(!c)return alert('Ingresá el nombre del cliente.');Object.assign(a,{client:c,task:$('#eTask').value,phone:$('#ePhone').value.trim(),note:$('#eNote').value.trim()});save();closeModal();render()}
+function availableSlotsForDate(date,id){return slotsForDate(date).filter(t=>{const other=state.appointments.find(x=>x.id!==id&&x.date===date&&x.time===t&&x.status==='pending');return !other&&!blockAt(date,t)})}
+function rescheduleOptions(date,id,current){const slots=availableSlotsForDate(date,id);if(current&&!slots.includes(current)&&state.appointments.find(x=>x.id===id&&x.date===date&&x.time===current))slots.unshift(current);return slots.map(t=>`<option value="${t}" ${t===current?'selected':''}>${t}</option>`).join('')}
+function refreshRescheduleSlots(id,current){const d=$('#rDate').value,sel=$('#rTime');sel.innerHTML=rescheduleOptions(d,id,current);$('#rEmpty').classList.toggle('hidden',sel.options.length>0);$('#rSave').disabled=sel.options.length===0}
+function startReschedule(id){const a=state.appointments.find(x=>x.id===id);showModal(`<h3>Reprogramar</h3><div class="sub">Conservamos cliente, tarea, teléfono y nota.</div><div class="field"><label>Nueva fecha</label><input type="date" id="rDate" value="${a.date}" onchange="refreshRescheduleSlots('${id}','${a.time}')"></div><div class="field"><label>Horario disponible</label><select id="rTime">${rescheduleOptions(a.date,id,a.time)}</select></div><div id="rEmpty" class="notice hidden">No hay horarios disponibles para ese día.</div><button id="rSave" class="btn primary block" onclick="saveReschedule('${id}')">Mover turno</button>`);refreshRescheduleSlots(id,a.time)}
+function saveReschedule(id){const a=state.appointments.find(x=>x.id===id),d=$('#rDate').value,t=$('#rTime').value;if(!t)return alert('Elegí un horario disponible.');const other=state.appointments.find(x=>x.id!==id&&x.date===d&&x.time===t&&x.status==='pending');if(other)return alert('Ese horario ya tiene otro turno.');if(blockAt(d,t))return alert('Ese horario está bloqueado.');if(!slotsForDate(d).includes(t)&&!(a.date===d&&a.time===t))return alert('Ese horario no está disponible en tu agenda configurada.');a.date=d;a.time=t;save();closeModal();render()}
+function whatsappMessage(a){let task=a.task?' ('+a.task+')':'';let m=state.waTemplate||defaultState.waTemplate;return m.split('{cliente}').join(a.client).split('{fecha}').join(fmtDate(a.date)).split('{hora}').join(a.time).split('{tarea}').join(task)}
+function openWhatsApp(id){const a=state.appointments.find(x=>x.id===id);if(!a)return;const msg=whatsappMessage(a);const phone=(a.phone||'').replace(/\D/g,'');const url=phone?`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`:`https://wa.me/?text=${encodeURIComponent(msg)}`;if(window.Android&&Android.openExternal){Android.openExternal(url);return}window.open(url,'_blank')}
+function showModal(html){$('#modal').innerHTML=html;$('#modalBack').classList.add('show')} function closeModal(){$('#modalBack').classList.remove('show')} $('#modalBack').onclick=e=>{if(e.target===$('#modalBack'))closeModal()}
+
+function exportBackup(){const json=JSON.stringify(state,null,2);if(window.Android&&Android.exportBackup){Android.exportBackup(json,'aptari-turnos-copia.json');return}const blob=new Blob([json],{type:'application/json'}),a=document.createElement('a');a.download='aptari-turnos-copia.json';a.href=URL.createObjectURL(blob);a.click();URL.revokeObjectURL(a.href)}
+function importBackup(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const restored=JSON.parse(r.result);if(!restored||typeof restored!=='object'||!restored.schedule||!Array.isArray(restored.appointments))throw new Error('formato');state=Object.assign({},defaultState,restored);save();alert('Copia restaurada.');renderSettings()}catch{alert('La copia no es válida.')}};r.readAsText(f)}
+
+function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))} function escAttr(s=''){return esc(s)}
+
+
+function showHowTo(){showModal(`<h3>Cómo usar APTARI Turnos</h3><div class="sub">Uso diario en cuatro pasos.</div><div class="card" style="box-shadow:none"><strong>1. Configurá tu agenda</strong><p>Elegí días, horarios y cada cuántos minutos ofrecés turnos. Cargá tus tareas si querés usar el desplegable.</p><strong>2. Asigná turnos</strong><p>En Semana tocá un horario LIBRE, escribí el cliente y, opcionalmente, elegí tarea, teléfono y nota.</p><strong>3. Gestioná</strong><p>Abrí un turno para marcarlo realizado, editarlo, reprogramarlo, cancelarlo o abrir WhatsApp.</p><strong>4. Publicá disponibilidad</strong><p>En Compartir elegí los días. La app genera una imagen sólo con los huecos libres, sin datos de clientes.</p></div><button class="btn primary block" onclick="closeModal()">Entendido</button>`)}
+function showDisclaimer(){showModal(`<h3>Información importante</h3><div class="sub">APTARI Asistente de Turnos · V1.0</div><div class="card" style="box-shadow:none"><p><strong>Datos locales.</strong> La agenda se guarda localmente dentro de esta aplicación en tu dispositivo. Desinstalar la app, borrar sus datos, restaurar el teléfono o cambiar de dispositivo puede eliminar la información si no existe una copia de seguridad.</p><p><strong>Copias.</strong> Usá periódicamente “Exportar copia de seguridad”.</p><p><strong>WhatsApp e Instagram.</strong> Son servicios de terceros. APTARI prepara textos e imágenes, pero no controla su funcionamiento, entrega ni disponibilidad.</p><p><strong>Verificación.</strong> El usuario es responsable de revisar fecha, hora, cliente y disponibilidad antes de confirmar o publicar.</p><p>Esta herramienta es de apoyo organizativo y no reemplaza los controles del usuario. Nada de lo anterior limita derechos que resulten irrenunciables conforme a la normativa aplicable.</p></div><button class="btn primary block" onclick="closeModal()">Cerrar</button>`)}
+
+function setupWizard(){if(state.setupDone)return;$('#setup').classList.add('show');let step=0;function paint(){const bar=(step+1)*25;$('#progressBar').style.width=bar+'%';let h='';if(step===0)h=`<div class="step active"><div class="field"><label>Nombre del negocio o profesional (opcional)</label><input id="wBusiness" value="${escAttr(state.business)}"></div><button class="btn primary block" id="nextW">Continuar</button></div>`;if(step===1)h=`<div class="step active"><h3>¿Cuándo atendés?</h3><p>Podés ajustar cada día más tarde.</p><div class="two"><div class="field"><label>Desde</label><input type="time" id="wStart" value="15:00"></div><div class="field"><label>Hasta</label><input type="time" id="wEnd" value="18:00"></div></div><div class="field"><label>Días activos</label><div class="channel-row">${DAYS.map((d,i)=>`<label><input type="checkbox" class="wDay" value="${i}" ${i<5?'checked':''}>${d}</label>`).join('')}</div></div><button class="btn primary block" id="nextW">Continuar</button></div>`;if(step===2)h=`<div class="step active"><h3>¿Cada cuánto ofrecés un turno?</h3><div class="field"><select id="wInterval" onchange="document.getElementById('wCustomWrap').classList.toggle('hidden',this.value!=='custom')"><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option><option value="45" selected>45 min</option><option value="60">60 min</option><option value="90">90 min</option><option value="120">120 min</option><option value="custom">Personalizado…</option></select><div class="field hidden" id="wCustomWrap"><label>Minutos por turno</label><input id="wCustomInterval" type="number" min="5" max="480" step="5" value="45"></div></div><h3>Mis tareas</h3><p>Son opcionales. Podés escribirlas separadas por coma.</p><div class="field"><textarea id="wTasks" placeholder="Ej.: Servicio 1, Servicio 2, Servicio 3">${esc(state.tasks.join(', '))}</textarea></div><button class="btn primary block" id="nextW">Continuar</button></div>`;if(step===3)h=`<div class="step active"><h3>Último paso</h3><div class="field"><label><input type="checkbox" id="wWA" checked> Uso WhatsApp para mis turnos</label></div><div class="field"><label>Quiero abrir la app en</label><select id="wView"><option value="upcoming">Próximos</option><option value="week">Semana</option></select></div><button class="btn primary block" id="finishW">Crear mi agenda</button></div>`;$('#setupSteps').innerHTML=h;
+ if($('#nextW'))$('#nextW').onclick=()=>{if(step===0)state.business=$('#wBusiness').value.trim()||'Mi Agenda';if(step===1){const s=$('#wStart').value,e=$('#wEnd').value,active=[...$$('.wDay:checked')].map(x=>Number(x.value));for(let i=0;i<7;i++)state.schedule[i]={on:active.includes(i),start:s,end:e}}if(step===2){state.interval=$('#wInterval').value==='custom'?Number($('#wCustomInterval').value):Number($('#wInterval').value);if(!Number.isFinite(state.interval)||state.interval<5||state.interval>480){alert('Elegí un intervalo válido entre 5 y 480 minutos.');return}state.tasks=$('#wTasks').value.split(',').map(x=>x.trim()).filter(Boolean)}step++;paint()};
+ if($('#finishW'))$('#finishW').onclick=()=>{state.useWhatsApp=$('#wWA').checked;state.initialView=$('#wView').value;state.setupDone=true;save();$('#setup').classList.remove('show');screen=state.initialView;setScreen(screen)}; }
+ paint(); }
+
+if(state.setupDone){screen=state.initialView||'upcoming';setScreen(screen)} else {render();setupWizard()}
+</script>
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
